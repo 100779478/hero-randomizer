@@ -468,8 +468,6 @@
     <!-- 选择玩家模式 -->
     <div id="selectMode" class="player-mode hidden">
         <div style="margin-bottom: 10px;">
-            <button id="selectAllBtn" class="small-btn">全选</button>
-            <button id="deselectAllBtn" class="small-btn">取消全选</button>
             <button id="addSelectedBtn" class="small-btn">添加选中玩家</button>
             <button id="clearPlayersBtn2" class="small-btn">清空玩家列表</button>
         </div>
@@ -629,19 +627,6 @@
         });
     }
 
-    // 全选玩家
-    document.getElementById('selectAllBtn').addEventListener('click', () => {
-        document.querySelectorAll('.player-option').forEach(option => {
-            option.classList.add('selected');
-        });
-    });
-
-    // 取消全选
-    document.getElementById('deselectAllBtn').addEventListener('click', () => {
-        document.querySelectorAll('.player-option').forEach(option => {
-            option.classList.remove('selected');
-        });
-    });
 
     // 添加选中玩家
     document.getElementById('addSelectedBtn').addEventListener('click', () => {
