@@ -126,7 +126,7 @@ h2 {
 }
 
 .player-item:hover {
-    background: #333;
+    background: #b074dc;
 }
 
 .player-item span.name {
@@ -511,4 +511,24 @@ th {
     line-height: 14px;
     text-align: center;
     font-weight: bold;
+}
+
+/* 已添加玩家的样式 */
+.player-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #1a1a1a !important;
+}
+
+.player-option.disabled:hover {
+    background: #1a1a1a !important;
+}
+
+/* 空状态提示 */
+.empty-state {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    font-size: 14px;
+    grid-column: 1 / -1;
 }

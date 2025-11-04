@@ -42,6 +42,13 @@ const presetPlayers = [
     {name: '爆炸无敌小恐龙', level: 3, preferredRole: 'any'}
 ];
 
+// 获取可用的预设玩家（过滤掉已添加的玩家）
+function getAvailablePresetPlayers() {
+    return presetPlayers.filter(presetPlayer =>
+        !allPlayers.some(addedPlayer => addedPlayer.name === presetPlayer.name)
+    );
+}
+
 // 初始化
 document.addEventListener('DOMContentLoaded', function () {
     renderHeroPool();
@@ -179,12 +186,18 @@ function switchToSelectMode() {
 // 渲染玩家选择器
 function renderPlayerSelector() {
     const playerSelector = document.getElementById('playerSelector');
+    const availablePlayers = getAvailablePresetPlayers();
+
+    if (availablePlayers.length === 0) {
+        playerSelector.innerHTML = '<div class="empty-state">所有玩家都已添加</div>';
+        return;
+    }
 
     if (enableRolePreference) {
         // 启用位置偏好时的渲染
-        playerSelector.innerHTML = presetPlayers.map((player, index) => `
-            <div class="player-option" style="font-size: 12px" data-index="${index}">
-                <div onclick="addPlayerFromList(${index}, getSelectedRole(${index}))" 
+        playerSelector.innerHTML = availablePlayers.map((player, index) => `
+            <div class="player-option" style="font-size: 12px">
+                <div onclick="addPlayerFromList('${player.name}', getSelectedRole(${index}))" 
                      style="cursor: pointer; padding: 8px; border-radius: 6px; background: #2a2a2a;">
                     ${player.name}
                 </div>
@@ -202,8 +215,9 @@ function renderPlayerSelector() {
         `).join('');
     } else {
         // 禁用位置偏好时的渲染
-        playerSelector.innerHTML = presetPlayers.map((player, index) => `
-            <div class="player-option" style="font-size: 12px" data-index="${index}" onclick="addPlayerFromList(${index})">
+        playerSelector.innerHTML = availablePlayers.map((player, index) => `
+            <div class="player-option" style="font-size: 12px" 
+                 onclick="addPlayerFromList('${player.name}')">
                 ${player.name}
             </div>
         `).join('');
@@ -237,8 +251,10 @@ function getSelectedRole(index) {
 }
 
 // 从列表添加玩家
-function addPlayerFromList(index, selectedRole = 'any') {
-    const player = presetPlayers[index];
+function addPlayerFromList(playerName, selectedRole = 'any') {
+    const player = presetPlayers.find(p => p.name === playerName);
+    if (!player) return;
+
     const preferredRole = enableRolePreference ? selectedRole : 'any';
 
     // 检查是否已存在
@@ -249,6 +265,7 @@ function addPlayerFromList(index, selectedRole = 'any') {
             preferredRole: preferredRole
         });
         renderPlayerList();
+        renderPlayerSelector(); // 重新渲染选择器，移除已添加的玩家
     }
 }
 
@@ -262,6 +279,7 @@ function clearPlayers() {
     if (confirm('确定要清空所有玩家吗？')) {
         allPlayers.length = 0;
         renderPlayerList();
+        renderPlayerSelector(); // 重新渲染选择器，恢复所有玩家
     }
 }
 
@@ -299,6 +317,11 @@ function addPlayer() {
     if (enableRolePreference) {
         roleInput.value = 'any';
     }
+
+    // 如果当前在选择模式，重新渲染选择器
+    if (document.getElementById('selectModeBtn').classList.contains('active')) {
+        renderPlayerSelector();
+    }
 }
 
 // 渲染玩家列表
@@ -328,6 +351,7 @@ function renderPlayerList() {
 function removePlayer(index) {
     allPlayers.splice(index, 1);
     renderPlayerList();
+    renderPlayerSelector(); // 重新渲染选择器，恢复被删除的玩家
 }
 
 // 根据等级平衡分队
