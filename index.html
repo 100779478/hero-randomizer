@@ -13,14 +13,9 @@
         <input type="checkbox" style="width: 20px" id="allowRepeat" checked>
         允许两队重复英雄
     </span>
-    <span style="cursor:pointer;">
-        <input type="checkbox" style="width: 20px" id="enableRolePreference">
-        启用位置偏好
-    </span>
 </div>
 
 <div class="hero-pool-management">
-    <h3 style="color:#ffcc00;">英雄池管理</h3>
     <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
         <input id="heroInput" class="player-input" placeholder="添加英雄，如: T-莱因哈特">
         <button id="addHeroBtn" class="small-btn">添加英雄</button>
@@ -32,8 +27,6 @@
 </div>
 
 <div class="player-management">
-    <h3 style="color:#ffcc00;">玩家管理</h3>
-
     <div class="mode-selector">
         <button id="customModeBtn" class="mode-btn active">自定义玩家</button>
         <button id="selectModeBtn" class="mode-btn">玩家列表</button>
@@ -48,15 +41,13 @@
                 <option value="2">B</option>
                 <option value="1">C</option>
             </select>
-            <!-- 位置偏好选择器 - 默认隐藏 -->
-            <select id="playerRoleInput" class="role-input hidden">
+            <select id="playerRoleInput">
                 <option value="any">任意位置</option>
-                <option value="T">坦克</option>
-                <option value="C">输出</option>
-                <option value="N">支援</option>
+                <option value="T">🛡️坦克</option>
+                <option value="C">⚔️输出</option>
+                <option value="N">🩹支援</option>
             </select>
             <button id="addPlayerBtn" class="small-btn">添加玩家</button>
-            <button id="clearPlayersBtn" class="small-btn">清空玩家列表</button>
         </div>
     </div>
 
@@ -69,6 +60,11 @@
 
     <div class="player-list" id="playerList">
         <!-- 玩家列表将通过JS动态生成 -->
+    </div>
+
+    <!-- 清空按钮放在玩家列表下面 -->
+    <div style="display: flex; justify-content: center; margin-top: 10px;">
+        <button id="clearPlayersBtn" class="small-btn" style="background: #e75757">清空玩家列表</button>
     </div>
 </div>
 
