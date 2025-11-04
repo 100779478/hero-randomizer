@@ -13,6 +13,11 @@
         <input type="checkbox" style="width: 20px" id="allowRepeat" checked>
         允许两队重复英雄
     </span>
+    <!-- 添加随机英雄开关 -->
+    <span style="cursor:pointer; margin-right: 20px;">
+        <input type="checkbox" style="width: 20px" id="randomHero" checked>
+        自动分配英雄
+    </span>
 </div>
 
 <div class="hero-pool-management">
@@ -68,12 +73,12 @@
     </div>
 </div>
 
-<button id="startBtn" style="margin-bottom: 20px">🎲 开始抽取英雄</button>
+<button id="startBtn" style="margin-bottom: 20px">🎲 开始分配</button>
 
 <!-- 弹窗 -->
 <div id="modal" class="modal">
     <div class="modal-content">
-        <div id="rollText" class="hero-roll">抽取中...</div>
+        <div id="rollText" class="hero-roll">分配中...</div>
         <div id="finalResult" style="display:none;">
         </div>
         <div class="modal-footer">瘸子🍆出品 · 包装私密 顺丰包邮🙂</div>

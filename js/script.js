@@ -722,6 +722,7 @@ async function startDraw() {
     console.log(`分队完成: A队${teamA.length}人, B队${teamB.length}人`);
 
     const allowRepeat = document.getElementById('allowRepeat').checked;
+    const randomHero = document.getElementById('randomHero').checked; // 获取随机英雄开关状态
     const is5v5 = totalPlayers === 10;
     const teamSize = is5v5 ? 5 : 6;
 
@@ -740,6 +741,70 @@ async function startDraw() {
 
     await new Promise(resolve => setTimeout(resolve, 1400));
 
+    // 如果不随机英雄，直接显示结果
+    if (!randomHero) {
+        clearInterval(rollInterval);
+
+        // 清空英雄分配
+        teamA.forEach(player => player.hero = '');
+        teamB.forEach(player => player.hero = '');
+
+        // 显示最终结果（不显示英雄列）
+        rollText.style.display = 'none';
+        finalResult.style.display = 'block';
+
+        finalResult.innerHTML = `
+            <h3>分队结果</h3>
+            <table>
+                <thead><tr><th>队伍</th><th>玩家</th><th>偏好位置</th></tr></thead>
+                <tbody>
+                    ${teamA.map(player => {
+            const preferredRoleName = player.preferredRole === 'any' ? '任意' :
+                player.preferredRole === 'T' ? '🛡️坦克' :
+                    player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
+            return `
+                            <tr class="teamA-row">
+                                <td>A 队</td>
+                                <td>${player.name}</td>
+                                <td>${preferredRoleName}</td>
+                            </tr>
+                        `;
+        }).join('')}
+                    ${teamB.map(player => {
+            const preferredRoleName = player.preferredRole === 'any' ? '任意' :
+                player.preferredRole === 'T' ? '🛡️坦克' :
+                    player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
+            return `
+                            <tr class="teamB-row">
+                                <td>B 队</td>
+                                <td>${player.name}</td>
+                                <td>${preferredRoleName}</td>
+                            </tr>
+                        `;
+        }).join('')}
+                </tbody>
+            </table>
+            <div style="margin-top:12px;">
+                <button id="closeModalBtn">关闭</button>
+                <button id="reDrawBtn" style="margin-left:10px;">重新分队</button>
+            </div>
+        `;
+
+        document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
+        document.getElementById('reDrawBtn').onclick = () => {
+            // 禁用按钮防止重复点击
+            document.getElementById('reDrawBtn').disabled = true;
+            setTimeout(() => document.getElementById('reDrawBtn').disabled = false, 500);
+
+            // 重新开始抽取
+            modal.style.display = 'none';
+            startDraw();
+        };
+
+        return; // 直接返回，不执行后续的英雄分配逻辑
+    }
+
+    // 以下是原有的随机英雄逻辑...
     // 检查英雄池是否足够
     if (!allowRepeat) {
         const needT = is5v5 ? 2 : 4;  // 两队需要的坦克总数
@@ -841,7 +906,6 @@ async function startDraw() {
             <tbody>
                 ${sortedTeamA.map(player => {
         const heroInfo = parseHero(player.hero);
-        // const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
             player.preferredRole === 'T' ? '🛡️坦克' :
                 player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
@@ -857,7 +921,6 @@ async function startDraw() {
     }).join('')}
                 ${sortedTeamB.map(player => {
         const heroInfo = parseHero(player.hero);
-        // const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
             player.preferredRole === 'T' ? '🛡️坦克' :
                 player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
