@@ -17,12 +17,12 @@ let heroPool = [
 
 // 预设玩家数据
 const presetPlayers = [
-    {name: '狗哥', level: 1, preferredRole: 'any'},
-    {name: '小宇', level: 1, preferredRole: 'any'},
-    {name: '孙妈', level: 1, preferredRole: 'any'},
-    {name: '怪物', level: 1, preferredRole: 'any'},
-    {name: '牢fu', level: 1, preferredRole: 'any'},
-    {name: '四月樱花🌸', level: 1, preferredRole: 'any'},
+    {name: '狗哥', level: 3, preferredRole: 'any'},
+    {name: '小宇', level: 3, preferredRole: 'any'},
+    {name: '孙妈', level: 3, preferredRole: 'any'},
+    {name: '怪物', level: 3, preferredRole: 'any'},
+    {name: '牢fu', level: 3, preferredRole: 'any'},
+    {name: '四月樱花🌸', level: 3, preferredRole: 'any'},
     {name: '白', level: 2, preferredRole: 'any'},
     {name: 'xiao99', level: 2, preferredRole: 'any'},
     {name: '🍆', level: 2, preferredRole: 'any'},
@@ -30,16 +30,16 @@ const presetPlayers = [
     {name: '内鬼', level: 2, preferredRole: 'any'},
     {name: '别再打了啦', level: 2, preferredRole: 'any'},
     {name: '嗡嗡叫', level: 2, preferredRole: 'any'},
-    {name: '小匕首', level: 3, preferredRole: 'any'},
-    {name: '齐格勒', level: 3, preferredRole: 'any'},
-    {name: '小怡', level: 3, preferredRole: 'any'},
-    {name: '夏风', level: 3, preferredRole: 'any'},
-    {name: '包饭', level: 3, preferredRole: 'any'},
-    {name: '慢树', level: 3, preferredRole: 'any'},
-    {name: '娜姐', level: 3, preferredRole: 'any'},
-    {name: '一个人睡着', level: 3, preferredRole: 'any'},
-    {name: '明天还会再见吗', level: 3, preferredRole: 'any'},
-    {name: '爆炸无敌小恐龙', level: 3, preferredRole: 'any'}
+    {name: '小匕首', level: 1, preferredRole: 'any'},
+    {name: '齐格勒', level: 1, preferredRole: 'any'},
+    {name: '小怡', level: 1, preferredRole: 'any'},
+    {name: '夏风', level: 1, preferredRole: 'any'},
+    {name: '包饭', level: 1, preferredRole: 'any'},
+    {name: '慢树', level: 1, preferredRole: 'any'},
+    {name: '娜姐', level: 1, preferredRole: 'any'},
+    {name: '一个人睡着', level: 1, preferredRole: 'any'},
+    {name: '明天还会再见吗', level: 1, preferredRole: 'any'},
+    {name: '爆炸无敌小恐龙', level: 1, preferredRole: 'any'}
 ];
 
 // 获取可用的预设玩家（过滤掉已添加的玩家）
@@ -202,14 +202,14 @@ function renderPlayerSelector() {
                     ${player.name}
                 </div>
                 <div class="role-selector" id="roleSelector-${index}">
-                    <div class="role-option-btn ${getRoleClass('any')} selected" 
+                    <div class="role-option-btn role-any selected" 
                          onclick="selectRole(${index}, 'any')">任意</div>
-                    <div class="role-option-btn ${getRoleClass('T')}" 
-                         onclick="selectRole(${index}, 'T')">坦克</div>
-                    <div class="role-option-btn ${getRoleClass('C')}" 
-                         onclick="selectRole(${index}, 'C')">输出</div>
-                    <div class="role-option-btn ${getRoleClass('N')}" 
-                         onclick="selectRole(${index}, 'N')">支援</div>
+                    <div class="role-option-btn role-t" 
+                         onclick="selectRole(${index}, 'T')">🛡️坦克</div>
+                    <div class="role-option-btn role-c" 
+                         onclick="selectRole(${index}, 'C')">⚔️输出</div>
+                    <div class="role-option-btn role-n" 
+                         onclick="selectRole(${index}, 'N')">🩹支援</div>
                 </div>
             </div>
         `).join('');
@@ -222,11 +222,6 @@ function renderPlayerSelector() {
             </div>
         `).join('');
     }
-}
-
-// 获取角色类名
-function getRoleClass(role) {
-    return `role-${role.toLowerCase()}`;
 }
 
 // 选择角色
@@ -246,8 +241,8 @@ function getSelectedRole(index) {
     const roleSelector = document.getElementById(`roleSelector-${index}`);
     const selectedBtn = roleSelector.querySelector('.role-option-btn.selected');
     return selectedBtn.textContent === '任意' ? 'any' :
-        selectedBtn.textContent === '坦克' ? 'T' :
-            selectedBtn.textContent === '输出' ? 'C' : 'N';
+        selectedBtn.textContent === '🛡️坦克' ? 'T' :
+            selectedBtn.textContent === '⚔️输出' ? 'C' : 'N';
 }
 
 // 从列表添加玩家
@@ -287,10 +282,10 @@ function clearPlayers() {
 function addPlayer() {
     const nameInput = document.getElementById('playerNameInput');
     const levelInput = document.getElementById('playerLevelInput');
-    const roleInput = document.getElementById('playerRoleInput');
+    const roleSelect = document.getElementById('playerRoleSelect');
     const name = nameInput.value.trim();
     const level = parseInt(levelInput.value) || 1;
-    const preferredRole = enableRolePreference ? roleInput.value : 'any';
+    const preferredRole = enableRolePreference ? roleSelect.value : 'any';
 
     if (!name) {
         alert('请输入玩家名称！');
@@ -315,7 +310,7 @@ function addPlayer() {
     nameInput.focus();
     levelInput.value = '1';
     if (enableRolePreference) {
-        roleInput.value = 'any';
+        roleSelect.value = 'any';
     }
 
     // 如果当前在选择模式，重新渲染选择器
@@ -332,8 +327,8 @@ function renderPlayerList() {
 
         if (enableRolePreference) {
             const roleName = player.preferredRole === 'any' ? '任意' :
-                player.preferredRole === 'T' ? '坦克' :
-                    player.preferredRole === 'C' ? '输出' : '支援';
+                player.preferredRole === 'T' ? '🛡️坦克' :
+                    player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
             roleText = `<span class="role-info">${roleName}</span>`;
         }
 
@@ -354,7 +349,7 @@ function removePlayer(index) {
     renderPlayerSelector(); // 重新渲染选择器，恢复被删除的玩家
 }
 
-// 根据等级平衡分队
+// 根据等级和位置偏好平衡分队
 function balanceTeamsByLevel() {
     // 清空队伍
     teamA.length = 0;
@@ -365,6 +360,19 @@ function balanceTeamsByLevel() {
     const level2Players = allPlayers.filter(p => p.level === 2);
     const level1Players = allPlayers.filter(p => p.level === 1);
 
+    // 如果启用了位置偏好，进一步按位置偏好分组
+    if (enableRolePreference) {
+        balanceTeamsWithRolePreference(level3Players, level2Players, level1Players);
+    } else {
+        balanceTeamsWithoutRolePreference(level3Players, level2Players, level1Players);
+    }
+
+    // 确保两队人数相等
+    ensureEqualTeamSizes();
+}
+
+// 不考虑位置偏好的分队（原有逻辑）
+function balanceTeamsWithoutRolePreference(level3Players, level2Players, level1Players) {
     // 随机打乱每个等级组
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
@@ -378,7 +386,7 @@ function balanceTeamsByLevel() {
     shuffleArray(level2Players);
     shuffleArray(level1Players);
 
-    // 分配等级3的玩家
+    // 分配等级3的玩家 - 优先平衡高等级玩家
     for (let i = 0; i < level3Players.length; i++) {
         if (i % 2 === 0) {
             teamA.push(level3Players[i]);
@@ -404,6 +412,241 @@ function balanceTeamsByLevel() {
             teamB.push(level1Players[i]);
         }
     }
+}
+
+// 确保两队人数相等
+function ensureEqualTeamSizes() {
+    while (Math.abs(teamA.length - teamB.length) > 0) {
+        if (teamA.length > teamB.length) {
+            // 从A队移动一个玩家到B队
+            const playerToMove = findOptimalPlayerToMove(teamA, teamB);
+            if (playerToMove) {
+                const index = teamA.indexOf(playerToMove);
+                teamA.splice(index, 1);
+                teamB.push(playerToMove);
+            } else {
+                break;
+            }
+        } else {
+            // 从B队移动一个玩家到A队
+            const playerToMove = findOptimalPlayerToMove(teamB, teamA);
+            if (playerToMove) {
+                const index = teamB.indexOf(playerToMove);
+                teamB.splice(index, 1);
+                teamA.push(playerToMove);
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+// 考虑位置偏好的分队（智能均衡配置）- 完全重写
+function balanceTeamsWithRolePreference(level3Players, level2Players, level1Players) {
+    // 清空队伍重新开始
+    teamA.length = 0;
+    teamB.length = 0;
+
+    // 计算需要的角色数量
+    const totalPlayers = allPlayers.length;
+    const is5v5 = totalPlayers === 10;
+    const teamSize = Math.floor(totalPlayers / 2);
+
+    // 5v5: 1坦2支援2输出, 6v6: 2坦2支援2输出
+    const requiredTanks = is5v5 ? 1 : 2;
+    const requiredSupports = 2;
+    const requiredDamage = is5v5 ? 2 : 2;
+
+    console.log(`需要配置: ${requiredTanks}坦 ${requiredSupports}支援 ${requiredDamage}输出`);
+
+    // 第一步：按等级从高到低排序所有玩家
+    const allPlayersSorted = [...allPlayers].sort((a, b) => b.level - a.level);
+
+    // 第二步：为每个玩家智能分配队伍
+    for (const player of allPlayersSorted) {
+        assignPlayerToBalancedTeam(player, requiredTanks, requiredSupports, requiredDamage);
+    }
+}
+
+// 根据位置偏好和队伍平衡分配玩家到队伍
+function assignPlayerToBalancedTeam(player, requiredTanks, requiredSupports, requiredDamage) {
+    const teamARoles = {
+        tank: teamA.filter(p => p.preferredRole === 'T').length,
+        support: teamA.filter(p => p.preferredRole === 'N').length,
+        damage: teamA.filter(p => p.preferredRole === 'C').length,
+        any: teamA.filter(p => p.preferredRole === 'any').length
+    };
+
+    const teamBRoles = {
+        tank: teamB.filter(p => p.preferredRole === 'T').length,
+        support: teamB.filter(p => p.preferredRole === 'N').length,
+        damage: teamB.filter(p => p.preferredRole === 'C').length,
+        any: teamB.filter(p => p.preferredRole === 'any').length
+    };
+
+    const teamAScore = teamA.reduce((sum, p) => sum + p.level, 0);
+    const teamBScore = teamB.reduce((sum, p) => sum + p.level, 0);
+    const teamACount = teamA.length;
+    const teamBCount = teamB.length;
+
+    // 计算角色限制
+    const canAddTankA = teamARoles.tank < requiredTanks;
+    const canAddTankB = teamBRoles.tank < requiredTanks;
+    const canAddSupportA = teamARoles.support < requiredSupports;
+    const canAddSupportB = teamBRoles.support < requiredSupports;
+    const canAddDamageA = teamARoles.damage < requiredDamage;
+    const canAddDamageB = teamBRoles.damage < requiredDamage;
+
+    // 根据玩家偏好角色决定分配
+    if (player.preferredRole === 'T') {
+        // 坦克玩家
+        if (canAddTankA && canAddTankB) {
+            // 两队都可以加坦克，按等级平衡分配
+            if (teamAScore <= teamBScore && teamACount <= teamBCount) {
+                teamA.push(player);
+            } else {
+                teamB.push(player);
+            }
+        } else if (canAddTankA) {
+            teamA.push(player);
+        } else if (canAddTankB) {
+            teamB.push(player);
+        } else {
+            // 两队坦克都已满，按任意位置处理
+            assignAnyPlayerToTeam(player, teamAScore, teamBScore, teamACount, teamBCount);
+        }
+    } else if (player.preferredRole === 'N') {
+        // 支援玩家
+        if (canAddSupportA && canAddSupportB) {
+            if (teamAScore <= teamBScore && teamACount <= teamBCount) {
+                teamA.push(player);
+            } else {
+                teamB.push(player);
+            }
+        } else if (canAddSupportA) {
+            teamA.push(player);
+        } else if (canAddSupportB) {
+            teamB.push(player);
+        } else {
+            assignAnyPlayerToTeam(player, teamAScore, teamBScore, teamACount, teamBCount);
+        }
+    } else if (player.preferredRole === 'C') {
+        // 输出玩家
+        if (canAddDamageA && canAddDamageB) {
+            if (teamAScore <= teamBScore && teamACount <= teamBCount) {
+                teamA.push(player);
+            } else {
+                teamB.push(player);
+            }
+        } else if (canAddDamageA) {
+            teamA.push(player);
+        } else if (canAddDamageB) {
+            teamB.push(player);
+        } else {
+            assignAnyPlayerToTeam(player, teamAScore, teamBScore, teamACount, teamBCount);
+        }
+    } else {
+        // 任意位置玩家
+        assignAnyPlayerToTeam(player, teamAScore, teamBScore, teamACount, teamBCount);
+    }
+}
+
+// 分配任意位置玩家到队伍
+function assignAnyPlayerToTeam(player, teamAScore, teamBScore, teamACount, teamBCount) {
+    // 计算各队角色缺口
+    const teamANeedTank = teamA.filter(p => p.preferredRole === 'T').length < 2;
+    const teamBNeedTank = teamB.filter(p => p.preferredRole === 'T').length < 2;
+    const teamANeedSupport = teamA.filter(p => p.preferredRole === 'N').length < 2;
+    const teamBNeedSupport = teamB.filter(p => p.preferredRole === 'N').length < 2;
+    const teamANeedDamage = teamA.filter(p => p.preferredRole === 'C').length < 2;
+    const teamBNeedDamage = teamB.filter(p => p.preferredRole === 'C').length < 2;
+
+    // 优先填补角色缺口
+    if (teamANeedTank && !teamBNeedTank) {
+        teamA.push(player);
+    } else if (teamBNeedTank && !teamANeedTank) {
+        teamB.push(player);
+    } else if (teamANeedSupport && !teamBNeedSupport) {
+        teamA.push(player);
+    } else if (teamBNeedSupport && !teamANeedSupport) {
+        teamB.push(player);
+    } else if (teamANeedDamage && !teamBNeedDamage) {
+        teamA.push(player);
+    } else if (teamBNeedDamage && !teamANeedDamage) {
+        teamB.push(player);
+    } else {
+        // 按等级和人数平衡分配
+        if (teamAScore <= teamBScore && teamACount <= teamBCount) {
+            teamA.push(player);
+        } else {
+            teamB.push(player);
+        }
+    }
+}
+
+// 更智能的玩家移动选择
+function findOptimalPlayerToMove(fromTeam, toTeam) {
+    // 分析两队的位置分布
+    const fromRoles = {
+        tank: fromTeam.filter(p => p.preferredRole === 'T').length,
+        support: fromTeam.filter(p => p.preferredRole === 'N').length,
+        damage: fromTeam.filter(p => p.preferredRole === 'C').length,
+        any: fromTeam.filter(p => p.preferredRole === 'any').length
+    };
+
+    const toRoles = {
+        tank: toTeam.filter(p => p.preferredRole === 'T').length,
+        support: toTeam.filter(p => p.preferredRole === 'N').length,
+        damage: toTeam.filter(p => p.preferredRole === 'C').length,
+        any: toTeam.filter(p => p.preferredRole === 'any').length
+    };
+
+    const totalPlayers = fromTeam.length + toTeam.length;
+    const is5v5 = totalPlayers === 10;
+    const idealTanks = is5v5 ? 1 : 2;
+    const idealSupports = 2;
+    const idealDamage = is5v5 ? 2 : 2;
+
+    // 如果目标队某个位置过少，不移走该位置
+    const rolesToAvoid = [];
+    if (toRoles.tank < idealTanks) {
+        rolesToAvoid.push('T');
+    }
+    if (toRoles.support < idealSupports) {
+        rolesToAvoid.push('N');
+    }
+    if (toRoles.damage < idealDamage) {
+        rolesToAvoid.push('C');
+    }
+
+    // 筛选候选人 - 优先移动等级较低的玩家
+    let candidates = fromTeam.filter(player =>
+        !rolesToAvoid.includes(player.preferredRole)
+    );
+
+    // 如果还有选择余地，优先移动重复的角色
+    if (candidates.length > 1) {
+        const roleCounts = {};
+        candidates.forEach(player => {
+            roleCounts[player.preferredRole] = (roleCounts[player.preferredRole] || 0) + 1;
+        });
+
+        // 找出数量最多的角色类型
+        const maxRole = Object.keys(roleCounts).reduce((a, b) =>
+            roleCounts[a] > roleCounts[b] ? a : b
+        );
+
+        candidates = candidates.filter(player => player.preferredRole === maxRole);
+    }
+
+    // 最后按等级选择（移动等级较低的）
+    if (candidates.length > 0) {
+        return candidates.reduce((lowest, current) =>
+            current.level < lowest.level ? current : lowest
+        );
+    }
+
+    return fromTeam[0]; // 如果没有合适选择，移动第一个玩家
 }
 
 // 随机整数生成
@@ -625,13 +868,21 @@ function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHero
 
 // 开始抽取
 async function startDraw() {
+    if (allPlayers.length === 0) return alert('请添加至少一名玩家！');
+
+    const totalPlayers = allPlayers.length;
+    if (totalPlayers !== 10 && totalPlayers !== 12) return alert('人数错误！5v5 需10人，6v6 需12人。');
+
     // 先平衡分队
     balanceTeamsByLevel();
 
-    if (allPlayers.length === 0) return alert('请添加至少一名玩家！');
+    // 验证队伍平衡
+    if (teamA.length !== teamB.length) {
+        console.warn(`队伍人数不均衡: A队${teamA.length}人 vs B队${teamB.length}人，尝试重新平衡...`);
+        ensureEqualTeamSizes();
+    }
 
-    const totalPlayers = teamA.length + teamB.length;
-    if (totalPlayers !== 10 && totalPlayers !== 12) return alert('人数错误！5v5 需10人，6v6 需12人。');
+    console.log(`分队完成: A队${teamA.length}人, B队${teamB.length}人`);
 
     const allowRepeat = document.getElementById('allowRepeat').checked;
     const is5v5 = totalPlayers === 10;
@@ -737,8 +988,8 @@ async function startDraw() {
                 ${sortedTeamA.map(player => {
         const heroInfo = parseHero(player.hero);
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
-            player.preferredRole === 'T' ? '坦克' :
-                player.preferredRole === 'C' ? '输出' : '支援';
+            player.preferredRole === 'T' ? '🛡️坦克' :
+                player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
         return `
                         <tr class="teamA-row">
                             <td>A 队</td>
@@ -752,8 +1003,8 @@ async function startDraw() {
                 ${sortedTeamB.map(player => {
         const heroInfo = parseHero(player.hero);
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
-            player.preferredRole === 'T' ? '坦克' :
-                player.preferredRole === 'C' ? '输出' : '支援';
+            player.preferredRole === 'T' ? '🛡️坦克' :
+                player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
         return `
                         <tr class="teamB-row">
                             <td>B 队</td>
