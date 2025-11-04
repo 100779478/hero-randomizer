@@ -183,7 +183,7 @@ function renderPlayerSelector() {
     if (enableRolePreference) {
         // 启用位置偏好时的渲染
         playerSelector.innerHTML = presetPlayers.map((player, index) => `
-            <div class="player-option" data-index="${index}">
+            <div class="player-option" style="font-size: 12px" data-index="${index}">
                 <div onclick="addPlayerFromList(${index}, getSelectedRole(${index}))" 
                      style="cursor: pointer; padding: 8px; border-radius: 6px; background: #2a2a2a;">
                     ${player.name}
@@ -203,7 +203,7 @@ function renderPlayerSelector() {
     } else {
         // 禁用位置偏好时的渲染
         playerSelector.innerHTML = presetPlayers.map((player, index) => `
-            <div class="player-option" data-index="${index}" onclick="addPlayerFromList(${index})">
+            <div class="player-option" style="font-size: 12px" data-index="${index}" onclick="addPlayerFromList(${index})">
                 ${player.name}
             </div>
         `).join('');
