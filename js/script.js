@@ -43,7 +43,7 @@ const presetPlayers = [
 ];
 
 // 初始化
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     renderHeroPool();
     renderPlayerList();
     setupEventListeners();
@@ -67,14 +67,14 @@ function setupEventListeners() {
     document.getElementById('startBtn').addEventListener('click', startDraw);
 
     // 回车键添加玩家
-    document.getElementById('playerNameInput').addEventListener('keypress', function(e) {
+    document.getElementById('playerNameInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             addPlayer();
         }
     });
 
     // 位置偏好开关
-    document.getElementById('enableRolePreference').addEventListener('change', function(e) {
+    document.getElementById('enableRolePreference').addEventListener('change', function (e) {
         enableRolePreference = e.target.checked;
         toggleRolePreferenceUI();
         renderPlayerList();
@@ -305,21 +305,18 @@ function addPlayer() {
 function renderPlayerList() {
     const playerList = document.getElementById('playerList');
     playerList.innerHTML = allPlayers.map((player, index) => {
-        let roleBadge = '';
         let roleText = '';
 
         if (enableRolePreference) {
-            const roleClass = getRoleClass(player.preferredRole);
             const roleName = player.preferredRole === 'any' ? '任意' :
                 player.preferredRole === 'T' ? '坦克' :
                     player.preferredRole === 'C' ? '输出' : '支援';
-            roleBadge = `<span class="player-role-badge ${roleClass}">${player.preferredRole}</span>`;
             roleText = `<span class="role-info">${roleName}</span>`;
         }
 
         return `
             <div class="player-item">
-                <span class="name">${player.name}${roleBadge}</span>
+                <span class="name">${player.name}</span>
                 ${roleText}
                 <button class="remove-btn" onclick="removePlayer(${index})">×</button>
             </div>
@@ -477,7 +474,10 @@ function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHero
         // 为偏好坦克的玩家分配坦克英雄
         if (tankPreferPlayers.length > 0) {
             const tanks = pickHeroes(heroGroups.T, tankPreferPlayers.length);
-            if (!tanks) return {ok: false, reason: `英雄池中 Tank(T) 可用数量不足（需要 ${tankPreferPlayers.length} 个）`};
+            if (!tanks) return {
+                ok: false,
+                reason: `英雄池中 Tank(T) 可用数量不足（需要 ${tankPreferPlayers.length} 个）`
+            };
 
             tanks.forEach((tank, idx) => {
                 assignedHeroes.push(tank);
