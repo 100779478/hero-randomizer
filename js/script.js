@@ -316,8 +316,11 @@ function balanceTeamsByLevel() {
     teamA.length = 0;
     teamB.length = 0;
 
-    // 按等级从高到低排序
-    const sortedPlayers = [...allPlayers].sort((a, b) => b.level - a.level);
+    // 先随机打乱玩家顺序，增加随机性
+    const shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
+
+    // 然后按等级从高到低排序（但顺序已经被打乱了）
+    const sortedPlayers = shuffledPlayers.sort((a, b) => b.level - a.level);
 
     // 计算需要的角色数量
     const totalPlayers = allPlayers.length;
@@ -327,6 +330,11 @@ function balanceTeamsByLevel() {
     const requiredDamage = is5v5 ? 2 : 2;
 
     console.log(`需要配置: ${requiredTanks}坦 ${requiredSupports}支援 ${requiredDamage}输出`);
+
+    // 为每个玩家添加一个随机因子，用于在等级相同时随机分配
+    sortedPlayers.forEach(player => {
+        player.randomFactor = Math.random();
+    });
 
     // 优先均衡等级高的玩家，同时考虑位置偏好
     for (let i = 0; i < sortedPlayers.length; i++) {
@@ -359,8 +367,8 @@ function balanceTeamsByLevel() {
         // 根据玩家偏好角色决定分配
         if (player.preferredRole === 'T') {
             if (canAddTankA && canAddTankB) {
-                // 两队都可以加坦克，按等级平衡分配
-                if (teamAScore <= teamBScore) {
+                // 两队都可以加坦克，按等级平衡分配，加入随机因子
+                if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
                     teamA.push(player);
                 } else {
                     teamB.push(player);
@@ -375,7 +383,7 @@ function balanceTeamsByLevel() {
             }
         } else if (player.preferredRole === 'N') {
             if (canAddSupportA && canAddSupportB) {
-                if (teamAScore <= teamBScore) {
+                if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
                     teamA.push(player);
                 } else {
                     teamB.push(player);
@@ -389,7 +397,7 @@ function balanceTeamsByLevel() {
             }
         } else if (player.preferredRole === 'C') {
             if (canAddDamageA && canAddDamageB) {
-                if (teamAScore <= teamBScore) {
+                if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
                     teamA.push(player);
                 } else {
                     teamB.push(player);
@@ -411,13 +419,20 @@ function balanceTeamsByLevel() {
     ensureEqualTeamSizes();
 }
 
-// 分配任意位置玩家到队伍
+// 分配任意位置玩家到队伍（带随机性）
 function assignAnyPlayerToTeam(player, teamAScore, teamBScore) {
-    // 按等级平衡分配
-    if (teamAScore <= teamBScore) {
+    // 按等级平衡分配，加入随机因子
+    if (teamAScore < teamBScore) {
         teamA.push(player);
-    } else {
+    } else if (teamAScore > teamBScore) {
         teamB.push(player);
+    } else {
+        // 等级相同时随机分配
+        if (Math.random() > 0.5) {
+            teamA.push(player);
+        } else {
+            teamB.push(player);
+        }
     }
 }
 
@@ -448,7 +463,7 @@ function ensureEqualTeamSizes() {
     }
 }
 
-// 更智能的玩家移动选择
+// 更智能的玩家移动选择（带随机性）
 function findOptimalPlayerToMove(fromTeam, toTeam) {
     const totalPlayers = fromTeam.length + toTeam.length;
     const is5v5 = totalPlayers === 10;
@@ -495,14 +510,21 @@ function findOptimalPlayerToMove(fromTeam, toTeam) {
         candidates = candidates.filter(player => player.preferredRole === maxRole);
     }
 
-    // 最后按等级选择（移动等级较低的）
-    if (candidates.length > 0) {
-        return candidates.reduce((lowest, current) =>
-            current.level < lowest.level ? current : lowest
-        );
+    // 如果还有多个候选人，随机选择一个
+    if (candidates.length > 1) {
+        // 先按等级排序，然后从等级较低的玩家中随机选择
+        candidates.sort((a, b) => a.level - b.level);
+        const lowestLevel = candidates[0].level;
+        const lowLevelCandidates = candidates.filter(p => p.level === lowestLevel);
+        return lowLevelCandidates[Math.floor(Math.random() * lowLevelCandidates.length)];
     }
 
-    return fromTeam[0]; // 如果没有合适选择，移动第一个玩家
+    if (candidates.length > 0) {
+        return candidates[0];
+    }
+
+    // 如果没有合适选择，随机选择一个玩家
+    return fromTeam[Math.floor(Math.random() * fromTeam.length)];
 }
 
 // 随机整数生成
