@@ -1,5 +1,4 @@
-// 全局变量
-const allPlayers = [];
+const allPlayers = []; // 所有玩家
 const teamA = [];
 const teamB = [];
 const modal = document.getElementById('modal');
@@ -195,7 +194,7 @@ function renderPlayerSelector() {
 }
 
 // 选择角色
-function selectRole(index, role) {
+function selectRole(index) {
     const roleSelector = document.getElementById(`roleSelector-${index}`);
     const buttons = roleSelector.querySelectorAll('.role-option-btn');
 
@@ -269,7 +268,7 @@ function addPlayer() {
         name,
         level,
         hero: '',
-        preferredRole: preferredRole
+        preferredRole
     });
     renderPlayerList();
 
@@ -319,7 +318,7 @@ function balanceTeamsByLevel() {
     // 先随机打乱玩家顺序，增加随机性
     const shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
 
-    // 然后按等级从高到低排序（但顺序已经被打乱了）
+    // 然后按等级从高到低排序
     const sortedPlayers = shuffledPlayers.sort((a, b) => b.level - a.level);
 
     // 计算需要的角色数量
@@ -732,7 +731,7 @@ async function startDraw() {
     const totalPlayers = allPlayers.length;
     if (totalPlayers !== 10 && totalPlayers !== 12) return alert('人数错误！5v5 需10人，6v6 需12人。');
 
-    // 先平衡分队
+    // 平衡分队
     balanceTeamsByLevel();
 
     // 验证队伍平衡

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>随机英雄抽取器</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- 用 🍆 做 favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
         <input type="checkbox" style="width: 20px" id="allowRepeat" checked>
         允许两队重复英雄
     </span>
-    <!-- 添加随机英雄开关 -->
+
     <span style="cursor:pointer; margin-right: 20px;">
         <input type="checkbox" style="width: 20px" id="randomHero" checked>
         自动分配英雄
@@ -29,7 +29,7 @@
         <button id="resetHeroPoolBtn" class="small-btn">重置英雄池</button>
     </div>
     <div class="hero-pool-display" id="heroPoolDisplay">
-        <!-- 英雄池将通过JS动态生成 -->
+        <!-- 英雄池 -->
     </div>
 </div>
 
@@ -58,18 +58,17 @@
         </div>
     </div>
 
-    <!-- 快速添加模式 -->
+    <!-- 快速添加 -->
     <div id="selectMode" class="player-mode hidden">
         <div class="player-selector" id="playerSelector">
-            <!-- 玩家选项将通过JS动态生成 -->
+            <!-- 玩家选项 -->
         </div>
     </div>
 
     <div class="player-list" id="playerList">
-        <!-- 玩家列表将通过JS动态生成 -->
+        <!-- 玩家列表 -->
     </div>
 
-    <!-- 清空按钮放在玩家列表下面 -->
     <div style="display: flex; justify-content: center; margin-top: 10px;">
         <button id="clearPlayersBtn" class="small-btn" style="background: #e75757">清空玩家列表</button>
     </div>
@@ -77,7 +76,6 @@
 
 <button id="startBtn" style="margin-bottom: 20px">🎲 开始分配</button>
 
-<!-- 弹窗 -->
 <div id="modal" class="modal">
     <div class="modal-content">
         <div id="rollText" class="hero-roll">分配中...</div>
