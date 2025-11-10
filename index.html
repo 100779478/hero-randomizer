@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon"
           href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
+    <style>
+    </style>
 </head>
 <body>
 
@@ -76,6 +78,54 @@
 
 <button id="startBtn" style="margin-bottom: 20px">🎲 开始分配</button>
 
+<!-- 内幕设置弹窗 -->
+<div id="rivalModal" class="rival-modal">
+    <div class="rival-modal-content">
+        <h3 style="color: #ffcc00; margin-bottom: 20px;">😜 内幕彩蛋</h3>
+
+        <!-- 宿敌设置 -->
+        <div class="rival-section">
+            <h4>敌对群友</h4>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; align-items: center;">
+                <select id="rivalPlayer1" style="flex: 1;">
+                    <option value="">选择玩家1</option>
+                </select>
+                <span style="color: #ff3366; font-weight: bold;">VS</span>
+                <select id="rivalPlayer2" style="flex: 1;">
+                    <option value="">选择玩家2</option>
+                </select>
+                <button id="addRivalBtn" class="small-btn">确认</button>
+            </div>
+            <div id="rivalList" class="rival-list">
+                <!-- 宿敌列表 -->
+            </div>
+        </div>
+
+        <!-- 英雄绑定设置 -->
+        <div class="rival-section">
+            <h4>专属英雄</h4>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; align-items: center;">
+                <select id="bindPlayer" style="flex: 1;">
+                    <option value="">选择玩家</option>
+                </select>
+                <select id="bindHero" style="flex: 1;">
+                    <option value="">选择英雄</option>
+                </select>
+                <button id="addBindBtn" class="small-btn">确认</button>
+            </div>
+            <div id="bindList" class="bind-list">
+                <!-- 绑定列表 -->
+            </div>
+        </div>
+
+        <div class="rival-controls">
+            <button id="closeRivalModal" class="small-btn">关闭</button>
+            <button id="clearRivalsBtn" class="small-btn" style="background: #e75757">清空所有设置</button>
+        </div>
+    </div>
+</div>
+
+<!-- 结果弹窗 -->
 <div id="modal" class="modal">
     <div class="modal-content">
         <div id="rollText" class="hero-roll">分配中...</div>
@@ -84,7 +134,9 @@
         <div class="modal-footer">瘸子🍆出品 · 包装私密 顺丰包邮🙂</div>
     </div>
 </div>
-<div class="footer">
+
+<!-- 底部信息 -->
+<div class="footer" id="footer">
     瘸子🍆出品 · 包装私密 顺丰包邮🙂
 </div>
 

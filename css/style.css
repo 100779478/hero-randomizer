@@ -142,9 +142,9 @@ h2 {
     font-size: 16px;
     cursor: pointer;
     transition: 0.3s;
-    padding: 0;
     width: 20px;
     height: 20px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -335,6 +335,8 @@ th {
     width: 100%;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
+    transition: 0.3s;
 }
 
 .footer:hover {
@@ -531,4 +533,105 @@ th {
     padding: 20px;
     font-size: 14px;
     grid-column: 1 / -1;
+}
+
+/* 宿敌设置弹窗样式 */
+.rival-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    justify-content: center;
+    align-items: center;
+}
+
+.rival-modal-content {
+    background-color: #222;
+    padding: 25px;
+    border-radius: 10px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    border: 2px solid #77409f;
+}
+
+.rival-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 8px;
+    border: 1px solid #444;
+}
+
+.rival-list, .bind-list {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.rival-item, .bind-item {
+    background: #333;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    transition: 0.3s;
+}
+
+.rival-item:hover, .bind-item:hover {
+    background: #3a3a3a;
+}
+
+.rival-item {
+    border-left: 3px solid #ff3366;
+}
+
+.bind-item {
+    border-left: 3px solid #4CAF50;
+}
+
+.remove-rival-btn, .remove-bind-btn {
+    background: #ff6666;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 10px;
+    transition: 0.3s;
+}
+
+.remove-rival-btn:hover, .remove-bind-btn:hover {
+    background: #ff4444;
+}
+
+.remove-bind-btn {
+    background: #ff9933;
+}
+
+.remove-bind-btn:hover {
+    background: #ff7700;
+}
+
+.rival-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #444;
 }

@@ -1,9 +1,15 @@
-const allPlayers = []; // 所有玩家
+// 所有玩家
+const allPlayers = [];
 const teamA = [];
 const teamB = [];
 const modal = document.getElementById('modal');
 const rollText = document.getElementById('rollText');
 const finalResult = document.getElementById('finalResult');
+const rivalModal = document.getElementById('rivalModal');
+
+// 宿敌与绑定系统
+const rivals = []; // 宿敌对 [{player1, player2}]
+const heroBinds = []; // 英雄绑定 [{player, hero}]
 
 // 默认英雄池
 let heroPool = [
@@ -35,6 +41,7 @@ const presetPlayers = [
     {name: '包饭', level: 1, preferredRole: 'any'},
     {name: '慢树', level: 1, preferredRole: 'any'},
     {name: '娜姐', level: 1, preferredRole: 'any'},
+    {name: '帕帕尔', level: 2, preferredRole: 'any'},
     {name: '一个人睡着', level: 1, preferredRole: 'any'},
     {name: '明天还会再见吗', level: 1, preferredRole: 'any'},
     {name: '爆炸无敌小恐龙', level: 1, preferredRole: 'any'}
@@ -68,8 +75,24 @@ function setupEventListeners() {
     document.getElementById('customModeBtn').addEventListener('click', switchToCustomMode);
     document.getElementById('selectModeBtn').addEventListener('click', switchToSelectMode);
 
+    // 宿敌与绑定事件
+    document.getElementById('addRivalBtn').addEventListener('click', addRival);
+    document.getElementById('addBindBtn').addEventListener('click', addHeroBind);
+    document.getElementById('closeRivalModal').addEventListener('click', closeRivalModal);
+    document.getElementById('clearRivalsBtn').addEventListener('click', clearRivals);
+
     // 开始抽取
     document.getElementById('startBtn').addEventListener('click', startDraw);
+
+    // 双击底部显示宿敌设置
+    document.getElementById('footer').addEventListener('dblclick', showRivalModal);
+
+    // 点击弹窗外部关闭
+    rivalModal.addEventListener('click', function (e) {
+        if (e.target === rivalModal) {
+            closeRivalModal();
+        }
+    });
 
     // 回车键添加玩家
     document.getElementById('playerNameInput').addEventListener('keypress', function (e) {
@@ -77,6 +100,157 @@ function setupEventListeners() {
             addPlayer();
         }
     });
+}
+
+// 显示宿敌设置弹窗
+function showRivalModal() {
+    updateRivalSelectors();
+    rivalModal.style.display = 'flex';
+}
+
+// 关闭宿敌设置弹窗
+function closeRivalModal() {
+    rivalModal.style.display = 'none';
+}
+
+// 清空所有宿敌和绑定
+function clearRivals() {
+    if (confirm('确定要清空所有敌对关系和英雄绑定吗？')) {
+        rivals.length = 0;
+        heroBinds.length = 0;
+        renderRivalList();
+        renderBindList();
+    }
+}
+
+// 更新宿敌选择器
+function updateRivalSelectors() {
+    const rivalSelect1 = document.getElementById('rivalPlayer1');
+    const rivalSelect2 = document.getElementById('rivalPlayer2');
+    const bindSelect = document.getElementById('bindPlayer');
+    const bindHeroSelect = document.getElementById('bindHero');
+
+    // 清空选项
+    rivalSelect1.innerHTML = '<option value="">选择玩家1</option>';
+    rivalSelect2.innerHTML = '<option value="">选择玩家2</option>';
+    bindSelect.innerHTML = '<option value="">选择玩家</option>';
+
+    // 添加玩家选项
+    allPlayers.forEach(player => {
+        const option = `<option value="${player.name}">${player.name}</option>`;
+        rivalSelect1.innerHTML += option;
+        rivalSelect2.innerHTML += option;
+        bindSelect.innerHTML += option;
+    });
+
+    // 更新英雄选择器
+    bindHeroSelect.innerHTML = '<option value="">选择英雄</option>';
+    heroPool.forEach(hero => {
+        bindHeroSelect.innerHTML += `<option value="${hero}">${hero}</option>`;
+    });
+}
+
+// 添加宿敌
+function addRival() {
+    const player1 = document.getElementById('rivalPlayer1').value;
+    const player2 = document.getElementById('rivalPlayer2').value;
+
+    if (!player1 || !player2) {
+        alert('请选择两名玩家！');
+        return;
+    }
+
+    if (player1 === player2) {
+        alert('不能选择同一名玩家！');
+        return;
+    }
+
+    // 检查是否已存在
+    const exists = rivals.some(r =>
+        (r.player1 === player1 && r.player2 === player2) ||
+        (r.player1 === player2 && r.player2 === player1)
+    );
+
+    if (exists) {
+        alert('这对sb已存在！');
+        return;
+    }
+
+    rivals.push({player1, player2});
+    renderRivalList();
+
+    // 清空选择
+    document.getElementById('rivalPlayer1').value = '';
+    document.getElementById('rivalPlayer2').value = '';
+}
+
+// 渲染宿敌列表
+function renderRivalList() {
+    const rivalList = document.getElementById('rivalList');
+    if (rivals.length === 0) {
+        rivalList.innerHTML = '<div style="color: #888; padding: 10px;">暂无敌对设置</div>';
+        return;
+    }
+
+    rivalList.innerHTML = rivals.map((rival, index) => `
+            <div class="rival-item">
+                <span>${rival.player1} 🆚 ${rival.player2}</span>
+                <button class="remove-rival-btn" onclick="removeRival(${index})">删除</button>
+            </div>
+        `).join('');
+}
+
+// 删除宿敌
+function removeRival(index) {
+    rivals.splice(index, 1);
+    renderRivalList();
+}
+
+// 添加英雄绑定
+function addHeroBind() {
+    const player = document.getElementById('bindPlayer').value;
+    const hero = document.getElementById('bindHero').value;
+
+    if (!player || !hero) {
+        alert('请选择玩家和英雄！');
+        return;
+    }
+
+    // 检查是否已存在
+    const exists = heroBinds.some(b => b.player === player);
+    if (exists) {
+        alert('该玩家已有英雄绑定！');
+        return;
+    }
+
+    heroBinds.push({player, hero});
+    renderBindList();
+
+    // 清空选择
+    document.getElementById('bindPlayer').value = '';
+    document.getElementById('bindHero').value = '';
+}
+
+// 渲染绑定列表
+function renderBindList() {
+    const bindList = document.getElementById('bindList');
+    if (heroBinds.length === 0) {
+        bindList.innerHTML = '<div style="color: #888; padding: 10px;">暂无英雄绑定</div>';
+        return;
+    }
+
+    bindList.innerHTML = heroBinds.map((bind, index) => `
+            <div class="bind-item">
+                <span>${bind.player} → ${bind.hero}</span>
+                <button class="remove-bind-btn" onclick="removeHeroBind(${index})">删除</button>
+            </div>
+        `).join('');
+}
+
+// 删除英雄绑定
+function removeHeroBind(index) {
+    heroBinds.splice(index, 1);
+    renderBindList();
 }
 
 // 渲染英雄池
@@ -91,11 +265,11 @@ function renderHeroPool() {
             else if (heroInfo.role === 'C') roleClass = 'damage';
         }
         return `
-            <div class="hero-item ${roleClass}">
-                ${hero}
-                <button class="hero-remove-btn" onclick="removeHero(${index})">×</button>
-            </div>
-        `;
+                <div class="hero-item ${roleClass}">
+                    ${hero}
+                    <button class="hero-remove-btn" onclick="removeHero(${index})">×</button>
+                </div>
+            `;
     }).join('');
 }
 
@@ -174,27 +348,27 @@ function renderPlayerSelector() {
     }
 
     playerSelector.innerHTML = availablePlayers.map((player, index) => `
-        <div class="player-option" style="font-size: 12px">
-            <div onclick="addPlayerFromList('${player.name}', getSelectedRole(${index}))" 
-                 style="cursor: pointer; padding: 8px; border-radius: 6px; background: #2a2a2a;">
-                ${player.name}
+            <div class="player-option">
+                <div onclick="addPlayerFromList('${player.name}', getSelectedRole(${index}))"
+                     style="cursor: pointer; padding: 8px; border-radius: 6px; font-size: 12px;background: #2a2a2a;">
+                    ${player.name}
+                </div>
+                <div class="role-selector" id="roleSelector-${index}">
+                    <div class="role-option-btn role-any selected"
+                         onclick="selectRole(${index}, 'any')">任意</div>
+                    <div class="role-option-btn role-t"
+                         onclick="selectRole(${index}, 'T')">🛡️坦克</div>
+                    <div class="role-option-btn role-c"
+                         onclick="selectRole(${index}, 'C')">⚔️输出</div>
+                    <div class="role-option-btn role-n"
+                         onclick="selectRole(${index}, 'N')">🩹治疗</div>
+                </div>
             </div>
-            <div class="role-selector" id="roleSelector-${index}">
-                <div class="role-option-btn role-any selected" 
-                     onclick="selectRole(${index}, 'any')">任意</div>
-                <div class="role-option-btn role-t" 
-                     onclick="selectRole(${index}, 'T')">🛡️坦克</div>
-                <div class="role-option-btn role-c" 
-                     onclick="selectRole(${index}, 'C')">⚔️输出</div>
-                <div class="role-option-btn role-n" 
-                     onclick="selectRole(${index}, 'N')">🩹支援</div>
-            </div>
-        </div>
-    `).join('');
+        `).join('');
 }
 
 // 选择角色
-function selectRole(index) {
+function selectRole(index, role) {
     const roleSelector = document.getElementById(`roleSelector-${index}`);
     const buttons = roleSelector.querySelectorAll('.role-option-btn');
 
@@ -210,8 +384,8 @@ function getSelectedRole(index) {
     const roleSelector = document.getElementById(`roleSelector-${index}`);
     const selectedBtn = roleSelector.querySelector('.role-option-btn.selected');
     return selectedBtn.textContent === '任意' ? 'any' :
-        selectedBtn.textContent === '🛡️坦克' ? 'T' :
-            selectedBtn.textContent === '⚔️输出' ? 'C' : 'N';
+        selectedBtn.textContent === '🛡️' ? 'T' :
+            selectedBtn.textContent === '⚔️' ? 'C' : 'N';
 }
 
 // 从列表添加玩家
@@ -242,6 +416,12 @@ function clearPlayers() {
         allPlayers.length = 0;
         renderPlayerList();
         renderPlayerSelector(); // 重新渲染选择器，恢复所有玩家
+
+        // 同时清空宿敌和绑定
+        rivals.length = 0;
+        heroBinds.length = 0;
+        renderRivalList();
+        renderBindList();
     }
 }
 
@@ -293,23 +473,46 @@ function renderPlayerList() {
                 player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
 
         return `
-            <div class="player-item">
-                <span class="name">${player.name}</span>
-                <span class="role-info">${roleName}</span>
-                <button class="remove-btn" onclick="removePlayer(${index})">×</button>
-            </div>
-        `;
+                <div class="player-item">
+                    <span class="name">${player.name}</span>
+                    <span class="role-info">${roleName}</span>
+                    <button class="remove-btn" onclick="removePlayer(${index})">×</button>
+                </div>
+            `;
     }).join('');
 }
 
 // 删除玩家
 function removePlayer(index) {
+    const playerName = allPlayers[index].name;
     allPlayers.splice(index, 1);
     renderPlayerList();
     renderPlayerSelector(); // 重新渲染选择器，恢复被删除的玩家
+
+    // 同时移除相关的宿敌和绑定
+    removePlayerFromRivalsAndBinds(playerName);
 }
 
-// 根据等级和位置偏好平衡分队
+// 当玩家被删除时，清理相关的宿敌和绑定
+function removePlayerFromRivalsAndBinds(playerName) {
+    // 移除宿敌
+    for (let i = rivals.length - 1; i >= 0; i--) {
+        if (rivals[i].player1 === playerName || rivals[i].player2 === playerName) {
+            rivals.splice(i, 1);
+        }
+    }
+    renderRivalList();
+
+    // 移除绑定
+    for (let i = heroBinds.length - 1; i >= 0; i--) {
+        if (heroBinds[i].player === playerName) {
+            heroBinds.splice(i, 1);
+        }
+    }
+    renderBindList();
+}
+
+// 根据等级和位置偏好平衡分队（支持宿敌系统）
 function balanceTeamsByLevel() {
     // 清空队伍
     teamA.length = 0;
@@ -335,7 +538,7 @@ function balanceTeamsByLevel() {
         player.randomFactor = Math.random();
     });
 
-    // 优先均衡等级高的玩家，同时考虑位置偏好
+    // 优先均衡等级高的玩家，同时考虑位置偏好和宿敌关系
     for (let i = 0; i < sortedPlayers.length; i++) {
         const player = sortedPlayers[i];
 
@@ -363,54 +566,58 @@ function balanceTeamsByLevel() {
         const canAddDamageA = teamARoles.damage < requiredDamage;
         const canAddDamageB = teamBRoles.damage < requiredDamage;
 
+        // 检查宿敌关系
+        const rivalInTeamA = hasRivalInTeam(player, teamA);
+        const rivalInTeamB = hasRivalInTeam(player, teamB);
+
         // 根据玩家偏好角色决定分配
         if (player.preferredRole === 'T') {
-            if (canAddTankA && canAddTankB) {
-                // 两队都可以加坦克，按等级平衡分配，加入随机因子
+            if (canAddTankA && canAddTankB && !rivalInTeamA && !rivalInTeamB) {
+                // 两队都可以加坦克，按等级平衡分配
                 if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
                     teamA.push(player);
                 } else {
                     teamB.push(player);
                 }
-            } else if (canAddTankA) {
+            } else if (canAddTankA && !rivalInTeamA) {
                 teamA.push(player);
-            } else if (canAddTankB) {
+            } else if (canAddTankB && !rivalInTeamB) {
                 teamB.push(player);
             } else {
-                // 两队坦克都已满，按任意位置处理
-                assignAnyPlayerToTeam(player, teamAScore, teamBScore);
+                // 宿敌冲突或位置满，按任意位置处理
+                assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
             }
         } else if (player.preferredRole === 'N') {
-            if (canAddSupportA && canAddSupportB) {
+            if (canAddSupportA && canAddSupportB && !rivalInTeamA && !rivalInTeamB) {
                 if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
                     teamA.push(player);
                 } else {
                     teamB.push(player);
                 }
-            } else if (canAddSupportA) {
+            } else if (canAddSupportA && !rivalInTeamA) {
                 teamA.push(player);
-            } else if (canAddSupportB) {
+            } else if (canAddSupportB && !rivalInTeamB) {
                 teamB.push(player);
             } else {
-                assignAnyPlayerToTeam(player, teamAScore, teamBScore);
+                assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
             }
         } else if (player.preferredRole === 'C') {
-            if (canAddDamageA && canAddDamageB) {
+            if (canAddDamageA && canAddDamageB && !rivalInTeamA && !rivalInTeamB) {
                 if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
                     teamA.push(player);
                 } else {
                     teamB.push(player);
                 }
-            } else if (canAddDamageA) {
+            } else if (canAddDamageA && !rivalInTeamA) {
                 teamA.push(player);
-            } else if (canAddDamageB) {
+            } else if (canAddDamageB && !rivalInTeamB) {
                 teamB.push(player);
             } else {
-                assignAnyPlayerToTeam(player, teamAScore, teamBScore);
+                assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
             }
         } else {
             // 任意位置玩家
-            assignAnyPlayerToTeam(player, teamAScore, teamBScore);
+            assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
         }
     }
 
@@ -418,15 +625,45 @@ function balanceTeamsByLevel() {
     ensureEqualTeamSizes();
 }
 
-// 分配任意位置玩家到队伍（带随机性）
-function assignAnyPlayerToTeam(player, teamAScore, teamBScore) {
-    // 按等级平衡分配，加入随机因子
-    if (teamAScore < teamBScore) {
-        teamA.push(player);
-    } else if (teamAScore > teamBScore) {
+// 检查玩家在某个队伍中是否有宿敌
+function hasRivalInTeam(player, team) {
+    return rivals.some(rival => {
+        if (rival.player1 === player.name) {
+            return team.some(p => p.name === rival.player2);
+        }
+        if (rival.player2 === player.name) {
+            return team.some(p => p.name === rival.player1);
+        }
+        return false;
+    });
+}
+
+// 分配任意位置玩家到队伍（考虑宿敌关系）
+function assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore) {
+    const rivalInTeamA = hasRivalInTeam(player, teamA);
+    const rivalInTeamB = hasRivalInTeam(player, teamB);
+
+    // 如果在一队有宿敌，就分配到另一队
+    if (rivalInTeamA && !rivalInTeamB) {
         teamB.push(player);
+    } else if (rivalInTeamB && !rivalInTeamA) {
+        teamA.push(player);
+    } else if (!rivalInTeamA && !rivalInTeamB) {
+        // 两队都没有宿敌，按等级平衡分配
+        if (teamAScore < teamBScore) {
+            teamA.push(player);
+        } else if (teamAScore > teamBScore) {
+            teamB.push(player);
+        } else {
+            // 等级相同时随机分配
+            if (Math.random() > 0.5) {
+                teamA.push(player);
+            } else {
+                teamB.push(player);
+            }
+        }
     } else {
-        // 等级相同时随机分配
+        // 两队都有宿敌（理论上不应该发生），随机分配
         if (Math.random() > 0.5) {
             teamA.push(player);
         } else {
@@ -575,7 +812,7 @@ function groupHeroesByRole(heroes) {
     };
 }
 
-// 为队伍分配英雄（考虑位置偏好）
+// 为队伍分配英雄（考虑位置偏好和英雄绑定）
 function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHeroes = null) {
     const used = new Set();
     if (usedHeroes instanceof Set) {
@@ -584,6 +821,19 @@ function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHero
 
     // 清空之前的英雄分配
     team.forEach(player => player.hero = '');
+
+    // 首先处理有英雄绑定的玩家
+    team.forEach(player => {
+        const bind = heroBinds.find(b => b.player === player.name);
+        if (bind) {
+            const heroInfo = parseHero(bind.hero);
+            if (heroInfo && !used.has(bind.hero)) {
+                player.hero = bind.hero;
+                used.add(bind.hero);
+                console.log(`为玩家 ${player.name} 分配绑定英雄: ${bind.hero}`);
+            }
+        }
+    });
 
     // 根据队伍大小确定角色配置
     const is5v5 = teamSize === 5;
@@ -618,8 +868,8 @@ function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHero
         return picked;
     }
 
-    // 1. 为偏好坦克的玩家分配坦克英雄
-    const tankPlayers = team.filter(p => p.preferredRole === 'T').slice(0, tankCount);
+    // 1. 为偏好坦克的玩家分配坦克英雄（跳过已有绑定的玩家）
+    const tankPlayers = team.filter(p => p.preferredRole === 'T' && !p.hero).slice(0, tankCount);
     if (tankPlayers.length > 0) {
         const tanks = pickHeroes(heroGroups.T, tankPlayers.length, 'T');
         if (!tanks) return {
@@ -635,8 +885,8 @@ function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHero
         });
     }
 
-    // 2. 为偏好支援的玩家分配支援英雄
-    const supportPlayers = team.filter(p => p.preferredRole === 'N').slice(0, supportCount);
+    // 2. 为偏好支援的玩家分配支援英雄（跳过已有绑定的玩家）
+    const supportPlayers = team.filter(p => p.preferredRole === 'N' && !p.hero).slice(0, supportCount);
     if (supportPlayers.length > 0) {
         const supports = pickHeroes(heroGroups.N, supportPlayers.length, 'N');
         if (!supports) return {
@@ -652,8 +902,8 @@ function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHero
         });
     }
 
-    // 3. 为偏好输出的玩家分配输出英雄
-    const damagePlayers = team.filter(p => p.preferredRole === 'C').slice(0, damageCount);
+    // 3. 为偏好输出的玩家分配输出英雄（跳过已有绑定的玩家）
+    const damagePlayers = team.filter(p => p.preferredRole === 'C' && !p.hero).slice(0, damageCount);
     if (damagePlayers.length > 0) {
         const damages = pickHeroes(heroGroups.C, damagePlayers.length, 'C');
         if (!damages) return {
@@ -775,41 +1025,43 @@ async function startDraw() {
         finalResult.style.display = 'block';
 
         finalResult.innerHTML = `
-            <h3>分队结果</h3>
-            <table>
-                <thead><tr><th>队伍</th><th>玩家</th><th>偏好位置</th></tr></thead>
-                <tbody>
-                    ${teamA.map(player => {
+                <h3>分队结果</h3>
+                <table>
+                    <thead><tr><th>队伍</th><th>玩家</th><th>偏好位置</th></tr></thead>
+                    <tbody>
+                        ${teamA.map(player => {
             const preferredRoleName = player.preferredRole === 'any' ? '任意' :
                 player.preferredRole === 'T' ? '🛡️坦克' :
                     player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
+            const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
             return `
-                            <tr class="teamA-row">
-                                <td>A 队</td>
-                                <td>${player.name}</td>
-                                <td>${preferredRoleName}</td>
-                            </tr>
-                        `;
+                                <tr class="teamA-row">
+                                    <td>A 队</td>
+                                    <td>${player.name}</td>
+                                    <td>${preferredRoleName}</td>
+                                </tr>
+                            `;
         }).join('')}
-                    ${teamB.map(player => {
+                        ${teamB.map(player => {
             const preferredRoleName = player.preferredRole === 'any' ? '任意' :
                 player.preferredRole === 'T' ? '🛡️坦克' :
                     player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
+            const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
             return `
-                            <tr class="teamB-row">
-                                <td>B 队</td>
-                                <td>${player.name}</td>
-                                <td>${preferredRoleName}</td>
-                            </tr>
-                        `;
+                                <tr class="teamB-row">
+                                    <td>B 队</td>
+                                    <td>${player.name}</td>
+                                    <td>${preferredRoleName}</td>
+                                </tr>
+                            `;
         }).join('')}
-                </tbody>
-            </table>
-            <div style="margin-top:12px;">
-                <button id="closeModalBtn">关闭</button>
-                <button id="reDrawBtn" style="margin-left:10px;">重新分队</button>
-            </div>
-        `;
+                    </tbody>
+                </table>
+                <div style="margin-top:12px;">
+                    <button id="closeModalBtn" class="small-btn">关闭</button>
+                    <button id="reDrawBtn" class="small-btn" style="margin-left:10px;">重新分队</button>
+                </div>
+            `;
 
         document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
         document.getElementById('reDrawBtn').onclick = () => {
@@ -921,47 +1173,49 @@ async function startDraw() {
     });
 
     finalResult.innerHTML = `
-        <h3>抽取结果</h3>
-        <table>
-            <thead><tr><th>队伍</th><th>玩家</th><th>英雄</th><th>位置</th><th>偏好</th></tr></thead>
-            <tbody>
-                ${sortedTeamA.map(player => {
+            <h3>抽取结果</h3>
+            <table>
+                <thead><tr><th>队伍</th><th>玩家</th><th>英雄</th><th>位置</th><th>偏好</th></tr></thead>
+                <tbody>
+                    ${sortedTeamA.map(player => {
         const heroInfo = parseHero(player.hero);
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
             player.preferredRole === 'T' ? '🛡️坦克' :
                 player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
+        const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
         return `
-                        <tr class="teamA-row">
-                            <td>A 队</td>
-                            <td>${player.name}</td>
-                            <td>${player.hero}</td>
-                            <td>${heroInfo ? heroInfo.role : '-'}</td>
-                            <td>${preferredRoleName}</td>
-                        </tr>
-                    `;
+                            <tr class="teamA-row">
+                                <td>A 队</td>
+                                <td>${player.name}</td>
+                                <td>${player.hero}</td>
+                                <td>${heroInfo ? heroInfo.role : '-'}</td>
+                                <td>${preferredRoleName}</td>
+                            </tr>
+                        `;
     }).join('')}
-                ${sortedTeamB.map(player => {
+                    ${sortedTeamB.map(player => {
         const heroInfo = parseHero(player.hero);
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
             player.preferredRole === 'T' ? '🛡️坦克' :
                 player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
+        const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
         return `
-                        <tr class="teamB-row">
-                            <td>B 队</td>
-                            <td>${player.name}</td>
-                            <td>${player.hero}</td>
-                            <td>${heroInfo ? heroInfo.role : '-'}</td>
-                            <td>${preferredRoleName}</td>
-                        </tr>
-                    `;
+                            <tr class="teamB-row">
+                                <td>B 队</td>
+                                <td>${player.name}</td>
+                                <td>${player.hero}</td>
+                                <td>${heroInfo ? heroInfo.role : '-'}</td>
+                                <td>${preferredRoleName}</td>
+                            </tr>
+                        `;
     }).join('')}
-            </tbody>
-        </table>
-        <div style="margin-top:12px;">
-            <button id="closeModalBtn">关闭</button>
-            <button id="reDrawBtn" style="margin-left:10px;">重新抽取</button>
-        </div>
-    `;
+                </tbody>
+            </table>
+            <div style="margin-top:12px;">
+                <button id="closeModalBtn" class="small-btn">关闭</button>
+                <button id="reDrawBtn" class="small-btn" style="margin-left:10px;">重新抽取</button>
+            </div>
+        `;
 
     document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
     document.getElementById('reDrawBtn').onclick = () => {
