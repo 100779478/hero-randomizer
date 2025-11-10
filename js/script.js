@@ -134,7 +134,6 @@ function updateRivalSelectors() {
     rivalSelect1.innerHTML = '<option value="">选择玩家1</option>';
     rivalSelect2.innerHTML = '<option value="">选择玩家2</option>';
     bindSelect.innerHTML = '<option value="">选择玩家</option>';
-
     // 添加玩家选项
     allPlayers.forEach(player => {
         const option = `<option value="${player.name}">${player.name}</option>`;
@@ -191,7 +190,6 @@ function renderRivalList() {
         rivalList.innerHTML = '<div style="color: #888; padding: 10px;">暂无敌对设置</div>';
         return;
     }
-
     rivalList.innerHTML = rivals.map((rival, index) => `
             <div class="rival-item">
                 <span>${rival.player1} 🆚 ${rival.player2}</span>
