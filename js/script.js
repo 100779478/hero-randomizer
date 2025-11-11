@@ -1039,7 +1039,6 @@ async function startDraw() {
             const preferredRoleName = player.preferredRole === 'any' ? '任意' :
                 player.preferredRole === 'T' ? '🛡️坦克' :
                     player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
-            const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
             return `
                                 <tr class="teamA-row">
                                     <td>A 队</td>
@@ -1052,7 +1051,6 @@ async function startDraw() {
             const preferredRoleName = player.preferredRole === 'any' ? '任意' :
                 player.preferredRole === 'T' ? '🛡️坦克' :
                     player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
-            const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
             return `
                                 <tr class="teamB-row">
                                     <td>B 队</td>
@@ -1188,7 +1186,6 @@ async function startDraw() {
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
             player.preferredRole === 'T' ? '🛡️坦克' :
                 player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
-        const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
         return `
                             <tr class="teamA-row">
                                 <td>A 队</td>
@@ -1204,7 +1201,6 @@ async function startDraw() {
         const preferredRoleName = player.preferredRole === 'any' ? '任意' :
             player.preferredRole === 'T' ? '🛡️坦克' :
                 player.preferredRole === 'C' ? '⚔️输出' : '🩹支援';
-        const levelText = player.level === 3 ? 'A' : player.level === 2 ? 'B' : 'C';
         return `
                             <tr class="teamB-row">
                                 <td>B 队</td>
