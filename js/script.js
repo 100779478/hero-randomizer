@@ -26,7 +26,6 @@ const presetPlayers = [
     {name: '孙妈', level: 3, preferredRole: 'any'},
     {name: '怪物', level: 3, preferredRole: 'any'},
     {name: '牢fu', level: 3, preferredRole: 'any'},
-    {name: '四月樱花🌸', level: 3, preferredRole: 'any'},
     {name: '白', level: 2, preferredRole: 'any'},
     {name: 'xiao99', level: 2, preferredRole: 'any'},
     {name: '🍆', level: 2, preferredRole: 'any'},
@@ -44,7 +43,14 @@ const presetPlayers = [
     {name: '帕帕尔', level: 2, preferredRole: 'any'},
     {name: '一个人睡着', level: 1, preferredRole: 'any'},
     {name: '明天还会再见吗', level: 1, preferredRole: 'any'},
-    {name: '爆炸无敌小恐龙', level: 1, preferredRole: 'any'}
+    {name: '爆炸无敌小恐龙', level: 1, preferredRole: 'any'},
+    {name: 'lianhua', level: 3, preferredRole: 'any'},
+    {name: '七崽', level: 1, preferredRole: 'any'},
+    {name: '糕耀太', level: 1, preferredRole: 'any'},
+    {name: '嗡嗡叫', level: 1, preferredRole: 'any'},
+    {name: '马丘比丘的小羊', level: 1, preferredRole: 'any'},
+    {name: '礼貌哥', level: 3, preferredRole: 'any'},
+    {name: '卖糖的麦兜', level: 1, preferredRole: 'any'},
 ];
 
 // 获取可用的预设玩家（过滤掉已添加的玩家）
