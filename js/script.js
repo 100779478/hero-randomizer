@@ -381,9 +381,10 @@ function selectRole(index, role) {
 function getSelectedRole(index) {
     const roleSelector = document.getElementById(`roleSelector-${index}`);
     const selectedBtn = roleSelector.querySelector('.role-option-btn.selected');
+    console.log(selectedBtn.textContent)
     return selectedBtn.textContent === '任意' ? 'any' :
-        selectedBtn.textContent === '🛡️' ? 'T' :
-            selectedBtn.textContent === '⚔️' ? 'C' : 'N';
+        selectedBtn.textContent === '🛡️坦克' ? 'T' :
+            selectedBtn.textContent === '⚔️输出' ? 'C' : 'N';
 }
 
 // 从列表添加玩家
