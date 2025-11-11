@@ -58,6 +58,7 @@ function getAvailablePresetPlayers() {
 document.addEventListener('DOMContentLoaded', function () {
     renderHeroPool();
     renderPlayerList();
+    renderPlayerSelector()
     setupEventListeners();
 });
 
@@ -72,8 +73,8 @@ function setupEventListeners() {
     document.getElementById('clearPlayersBtn').addEventListener('click', clearPlayers);
 
     // 模式切换
-    document.getElementById('customModeBtn').addEventListener('click', switchToCustomMode);
-    document.getElementById('selectModeBtn').addEventListener('click', switchToSelectMode);
+    // document.getElementById('customModeBtn').addEventListener('click', switchToCustomMode);
+    // document.getElementById('selectModeBtn').addEventListener('click', switchToSelectMode);
 
     // 宿敌与绑定事件
     document.getElementById('addRivalBtn').addEventListener('click', addRival);
@@ -319,21 +320,21 @@ function resetHeroPool() {
 }
 
 // 切换到自定义模式
-function switchToCustomMode() {
-    document.getElementById('customModeBtn').classList.add('active');
-    document.getElementById('selectModeBtn').classList.remove('active');
-    document.getElementById('customMode').classList.remove('hidden');
-    document.getElementById('selectMode').classList.add('hidden');
-}
-
-// 切换到选择模式
-function switchToSelectMode() {
-    document.getElementById('selectModeBtn').classList.add('active');
-    document.getElementById('customModeBtn').classList.remove('active');
-    document.getElementById('selectMode').classList.remove('hidden');
-    document.getElementById('customMode').classList.add('hidden');
-    renderPlayerSelector();
-}
+// function switchToCustomMode() {
+//     document.getElementById('customModeBtn').classList.add('active');
+//     document.getElementById('selectModeBtn').classList.remove('active');
+//     document.getElementById('customMode').classList.remove('hidden');
+//     document.getElementById('selectMode').classList.add('hidden');
+// }
+//
+// // 切换到选择模式
+// function switchToSelectMode() {
+//     document.getElementById('selectModeBtn').classList.add('active');
+//     document.getElementById('customModeBtn').classList.remove('active');
+//     document.getElementById('selectMode').classList.remove('hidden');
+//     document.getElementById('customMode').classList.add('hidden');
+//     renderPlayerSelector();
+// }
 
 // 渲染玩家选择器
 function renderPlayerSelector() {
@@ -1086,19 +1087,19 @@ async function startDraw() {
         if (heroGroups.T.length < needT) {
             clearInterval(rollInterval);
             modal.style.display = 'none';
-            return alert(`英雄池中 Tank(T) 总数不足以同时满足两队（需要 ${needT} 位，总池 ${heroGroups.T.length}）`);
+            return alert(`英雄池中坦克总数不足以同时满足两队（需要 ${needT} 位，总池 ${heroGroups.T.length}）`);
         }
 
         if (heroGroups.N.length < needN) {
             clearInterval(rollInterval);
             modal.style.display = 'none';
-            return alert(`英雄池中 Support(N) 总数不足以同时满足两队（需要 ${needN} 位，总池 ${heroGroups.N.length}）`);
+            return alert(`英雄池中支援总数不足以同时满足两队（需要 ${needN} 位，总池 ${heroGroups.N.length}）`);
         }
 
         if (heroGroups.C.length < needC) {
             clearInterval(rollInterval);
             modal.style.display = 'none';
-            return alert(`英雄池中 Damage(C) 总数不足以同时满足两队（需要 ${needC} 位，总池 ${heroGroups.C.length}）`);
+            return alert(`英雄池中输出总数不足以同时满足两队（需要 ${needC} 位，总池 ${heroGroups.C.length}）`);
         }
 
         if (heroGroups.ALL.length < totalPlayers) {
