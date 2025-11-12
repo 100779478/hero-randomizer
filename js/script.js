@@ -377,7 +377,7 @@ function renderPlayerSelector() {
     playerSelector.innerHTML = availablePlayers.map((player, index) => `
             <div class="player-option">
                 <div onclick="addPlayerFromList('${player.name}', getSelectedRole(${index}))"
-                     style="cursor: pointer; padding: 8px; border-radius: 6px; font-size: 12px;background: #2a2a2a;">
+                     style="cursor: pointer; border-radius: 6px; font-size: 12px;background: #2a2a2a;">
                     ${player.name}
                 </div>
                 <div class="role-selector" id="roleSelector-${index}">
