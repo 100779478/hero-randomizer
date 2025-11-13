@@ -7,9 +7,184 @@
     <link rel="icon"
           href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
     <style>
+        /* Markdown 弹窗样式 */
+        .md-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .md-modal-content {
+            background: #1e1e1e;
+            border-radius: 12px;
+            width: 90%;
+            height: 80%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.3);
+            border: 2px solid #ffcc00;
+        }
+
+        .md-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #444;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .md-title {
+            color: #ffcc00;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .close-md {
+            background: #e75757;
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-md:hover {
+            background: #ff4444;
+        }
+
+        .md-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* 段落 */
+        .md-body p {
+            margin: 10px 0;
+        }
+
+        /* 标题 */
+        .md-body h1, .md-body h2, .md-body h3, .md-body h4, .md-body h5, .md-body h6 {
+            color: #ffcc00;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* 列表 */
+        .md-body ul, .md-body ol {
+            margin: 10px 0 10px 20px;
+            padding-left: 20px;
+        }
+
+        .md-body li {
+            margin: 5px 0;
+        }
+
+        /* 引用 */
+        .md-body blockquote {
+            border-left: 4px solid #ffcc00;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #ccc;
+            font-style: italic;
+        }
+
+        /* 代码块 & 行内代码 */
+        .md-body pre {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border-left: 4px solid #ffcc00;
+            margin: 10px 0;
+        }
+
+        .md-body code {
+            background: #2a2a2a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ff9966;
+        }
+
+        /* 表格 */
+        .md-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .md-body th, .md-body td {
+            border: 1px solid #555;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .md-body th {
+            background: #333;
+            color: #ffcc00;
+        }
+
+        /* 查看文档按钮样式 */
+        #viewDocBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        #viewDocBtn:hover {
+            background: #ffaa00;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
+
+<!-- 查看文档按钮 -->
+<button id="viewDocBtn">📖 使用说明</button>
+
+<!-- Markdown 弹窗 -->
+<div id="mdModal" class="md-modal">
+    <div class="md-modal-content">
+        <div class="md-header">
+            <div class="md-title">📚 OW内战工具 - 使用说明</div>
+            <button class="close-md" id="closeMd">×</button>
+        </div>
+        <div class="md-body" id="mdContent">
+            <div style="text-align: center; color: #ccc;">
+                <p>加载说明文档中...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <h2>🎮 ow内战工具 </h2>
 
 <div class="feature-switches">
@@ -38,8 +213,6 @@
 <div class="player-management">
     <div class="mode-selector">
         <div style="color: #ffcc00;font-weight: bold;text-shadow: 0 0 10px #ffaa00;">👥玩家列表</div>
-        <!--        <button id="customModeBtn" class="mode-btn active">自定义玩家</button>-->
-        <!--        <button id="selectModeBtn" class="mode-btn">玩家列表</button>-->
     </div>
 
     <!-- 自定义玩家模式 -->
@@ -146,6 +319,154 @@
 <div class="footer" id="footer">
     瘸子🍆出品 · 包装私密 顺丰包邮🙂
 </div>
+
 <script src="js/script.js?v=1.3"></script>
+<script>
+    // Markdown 弹窗控制
+    const mdModal = document.getElementById('mdModal');
+    const viewDocBtn = document.getElementById('viewDocBtn');
+    const closeMd = document.getElementById('closeMd');
+    const mdContent = document.getElementById('mdContent');
+
+    // 打开弹窗并加载 Markdown
+    viewDocBtn.addEventListener('click', function () {
+        loadMarkdownFile();
+        mdModal.style.display = 'flex';
+    });
+
+    // 关闭弹窗
+    closeMd.addEventListener('click', function () {
+        mdModal.style.display = 'none';
+    });
+
+    // 点击背景关闭
+    mdModal.addEventListener('click', function (e) {
+        if (e.target === mdModal) {
+            mdModal.style.display = 'none';
+        }
+    });
+
+    // ESC键关闭
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && mdModal.style.display === 'flex') {
+            mdModal.style.display = 'none';
+        }
+    });
+
+    // 加载 Markdown 文件
+    function loadMarkdownFile() {
+        mdContent.innerHTML = '<div style="text-align: center; color: #ccc;"><p>加载说明文档中...</p></div>';
+
+        // 尝试加载不同的 Markdown 文件
+        const mdFiles = [
+            'README.md',
+            'readme.md',
+            'documentation.md',
+            'docs/README.md',
+            'docs/readme.md',
+            '使用说明.md',
+            '说明文档.md'
+        ];
+
+        let currentFileIndex = 0;
+
+        function tryLoadNextFile() {
+            if (currentFileIndex >= mdFiles.length) {
+                mdContent.innerHTML = `
+                    <div style="text-align: center; color: #ff6666;">
+                        <h3>❌ 未找到说明文档</h3>
+                        <p>请在项目根目录下创建 README.md 文件</p>
+                        <p>或者将说明文档命名为：README.md、readme.md、documentation.md</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const filePath = mdFiles[currentFileIndex];
+            fetch(filePath)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('文件不存在');
+                    }
+                    return response.text();
+                })
+                .then(markdown => {
+                    // 简单的 Markdown 解析（你可以用更复杂的库如 marked.js）
+                    const html = parseMarkdown(markdown);
+                    mdContent.innerHTML = html;
+                })
+                .catch(error => {
+                    currentFileIndex++;
+                    tryLoadNextFile();
+                });
+        }
+
+        tryLoadNextFile();
+    }
+
+    function parseMarkdown(markdown) {
+        if (!markdown) return '';
+
+        let html = markdown;
+
+        // 统一换行符
+        html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+        // 代码块（优先处理，防止被后面规则污染）
+        html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+        // 行内代码
+        html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+        // 标题（h1 - h6）
+        html = html
+            .replace(/^###### (.*)$/gim, '<h6>$1</h6>')
+            .replace(/^##### (.*)$/gim, '<h5>$1</h5>')
+            .replace(/^#### (.*)$/gim, '<h4>$1</h4>')
+            .replace(/^### (.*)$/gim, '<h3>$1</h3>')
+            .replace(/^## (.*)$/gim, '<h2>$1</h2>')
+            .replace(/^# (.*)$/gim, '<h1>$1</h1>');
+
+        // 粗体 & 斜体（顺序要先粗体）
+        html = html
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/__(.*?)__/g, '<strong>$1</strong>')
+            .replace(/_(.*?)_/g, '<em>$1</em>');
+
+        // 链接
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#ffcc00;">$1</a>');
+
+        // 图片
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;">');
+
+        // 引用
+        html = html.replace(/^> (.*)$/gim, '<blockquote>$1</blockquote>');
+
+        // 无序列表
+        html = html.replace(/^\s*[-+*] (.*)$/gim, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>)(?![\s\S]*<\/ul>)/gims, '<ul>$1</ul>');
+
+        // 有序列表
+        html = html.replace(/^\s*\d+\.\s+(.*)$/gim, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>)(?![\s\S]*<\/ol>)/gims, '<ol>$1</ol>');
+
+        // 水平线
+        html = html.replace(/^(-{3,}|\*{3,}|_{3,})$/gim, '<hr>');
+
+        // 段落包装（避免包裹已有块级标签）
+        html = html
+            .replace(/^(?!<h\d|<ul>|<ol>|<li>|<blockquote>|<pre>|<img|<hr)(.+)$/gim, '<p>$1</p>')
+            .replace(/\n{2,}/g, '\n');
+
+        // 清理多余换行和空段落
+        html = html
+            .replace(/<p>\s*<\/p>/g, '')
+            .replace(/\n/g, '');
+
+        return html;
+    }
+
+</script>
 </body>
 </html>
