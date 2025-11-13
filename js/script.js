@@ -26,13 +26,25 @@ const presetPlayers = [
     {name: '孙妈', level: 3, preferredRole: 'any'},
     {name: '怪物', level: 3, preferredRole: 'any'},
     {name: '牢fu', level: 3, preferredRole: 'any'},
+    {name: 'lianhua', level: 3, preferredRole: 'any'},
+    {name: '礼貌哥', level: 3, preferredRole: 'any'},
+    {name: "婆娑月", level: 3, preferredRole: 'any'},
+    {name: '🍆', level: 2, preferredRole: 'any'},
+    {name: "Evenstar", level: 2, preferredRole: 'any'},
     {name: '白', level: 2, preferredRole: 'any'},
     {name: 'xiao99', level: 2, preferredRole: 'any'},
-    {name: '🍆', level: 2, preferredRole: 'any'},
     {name: '夏目蓝', level: 2, preferredRole: 'any'},
     {name: '内鬼', level: 2, preferredRole: 'any'},
+    {name: "RickyTT", level: 2, preferredRole: 'any'},
     {name: '别再打了啦', level: 2, preferredRole: 'any'},
     {name: '嗡嗡叫', level: 2, preferredRole: 'any'},
+    {name: 'vison', level: 2, preferredRole: 'any'},
+    {name: '扮猪吃饲料', level: 2, preferredRole: 'any'},
+    {name: "八级大狂风", level: 2, preferredRole: 'any'},
+    {name: "吼爹", level: 2, preferredRole: 'any'},
+    {name: "蓝喵", level: 2, preferredRole: 'any'},
+    {name: '帕帕尔', level: 2, preferredRole: 'any'},
+    {name: '腦內放映', level: 2, preferredRole: 'any'},
     {name: '小匕首', level: 1, preferredRole: 'any'},
     {name: '齐格勒', level: 1, preferredRole: 'any'},
     {name: '小怡', level: 1, preferredRole: 'any'},
@@ -40,30 +52,33 @@ const presetPlayers = [
     {name: '包饭', level: 1, preferredRole: 'any'},
     {name: '慢树', level: 1, preferredRole: 'any'},
     {name: '娜姐', level: 1, preferredRole: 'any'},
-    {name: '帕帕尔', level: 2, preferredRole: 'any'},
     {name: '一个人睡着', level: 1, preferredRole: 'any'},
     {name: '明天还会再见吗', level: 1, preferredRole: 'any'},
     {name: '爆炸无敌小恐龙', level: 1, preferredRole: 'any'},
-    {name: 'lianhua', level: 3, preferredRole: 'any'},
     {name: '七崽', level: 1, preferredRole: 'any'},
     {name: '糕耀太', level: 1, preferredRole: 'any'},
     {name: '嗡嗡叫', level: 1, preferredRole: 'any'},
     {name: '马丘比丘的小羊', level: 1, preferredRole: 'any'},
     {name: '迷迷', level: 1, preferredRole: 'any'},
-    {name: '礼貌哥', level: 3, preferredRole: 'any'},
+    {name: "璃璃宝贝", level: 1, preferredRole: 'any'},
+    {name: "SuperLu", level: 1, preferredRole: 'any'},
+    {name: "laso", level: 1, preferredRole: 'any'},
+    {name: "小岳", level: 1, preferredRole: 'any'},
+    {name: "ONENONLY", level: 1, preferredRole: 'any'},
+    {name: "Hakunamtata", level: 1, preferredRole: 'any'},
+    {name: "傲娇姬", level: 1, preferredRole: 'any'},
+    {name: "巴蒂", level: 1, preferredRole: 'any'},
+    {name: "豪门", level: 1, preferredRole: 'any'},
     {name: '卖糖的麦兜', level: 1, preferredRole: 'any'},
     {name: 'Meditatg', level: 1, preferredRole: 'any'},
     {name: 'PeanutFan', level: 1, preferredRole: 'any'},
     {name: 'SuperSix', level: 1, preferredRole: 'any'},
     {name: 'TAEYEON', level: 1, preferredRole: 'any'},
-    {name: 'vison', level: 2, preferredRole: 'any'},
     {name: 'Yuki', level: 1, preferredRole: 'any'},
-    {name: '扮猪吃饲料', level: 2, preferredRole: 'any'},
     {name: '附子', level: 1, preferredRole: 'any'},
     {name: 'hao', level: 1, preferredRole: 'any'},
     {name: '花落微凉梦清幽', level: 1, preferredRole: 'any'},
     {name: '可以亲亲猫猫头吗', level: 1, preferredRole: 'any'},
-    {name: '腦內放映', level: 2, preferredRole: 'any'},
     {name: '摸头杀', level: 1, preferredRole: 'any'},
     {name: '如果当时', level: 1, preferredRole: 'any'},
     {name: '伤心猫猫', level: 1, preferredRole: 'any'},
@@ -176,6 +191,7 @@ function updateRivalSelectors() {
     heroPool.forEach(hero => {
         bindHeroSelect.innerHTML += `<option value="${hero}">${hero}</option>`;
     });
+
 }
 
 // 添加宿敌
@@ -237,7 +253,6 @@ function removeRival(index) {
 function addHeroBind() {
     const player = document.getElementById('bindPlayer').value;
     const hero = document.getElementById('bindHero').value;
-
     if (!player || !hero) {
         alert('请选择玩家和英雄！');
         return;
