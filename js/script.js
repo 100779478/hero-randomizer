@@ -25,6 +25,7 @@ const presetPlayers = [
     {name: '小宇', level: 4, preferredRole: 'any'},
     {name: '孙妈', level: 4, preferredRole: 'any'},
     {name: '怪物', level: 4, preferredRole: 'any'},
+    {name: '叫我泽村就行啦', level: 4, preferredRole: 'any'},
     {name: '牢fu', level: 4, preferredRole: 'any'},
     {name: 'lianhua', level: 4, preferredRole: 'any'},
     {name: '礼貌哥', level: 4, preferredRole: 'any'},
@@ -399,13 +400,13 @@ function renderPlayerSelector() {
                     ${player.name}
                 </div>
                 <div class="role-selector" id="roleSelector-${index}">
-                    <div class="role-option-btn role-any selected"
-                         onclick="selectRole(${index}, 'any')">任意 </div>
-                    <div class="role-option-btn role-t"
+                    <div class="role-option-btn role-any ${player.preferredRole === 'any' ? 'selected' : null}"
+                         onclick="selectRole(${index}, 'any')">任意</div>
+                    <div class="role-option-btn role-t ${player.preferredRole === 'T' ? 'selected' : null}"
                          onclick="selectRole(${index}, 'T')">🛡️坦克</div>
-                    <div class="role-option-btn role-c"
+                    <div class="role-option-btn role-c ${player.preferredRole === 'C' ? 'selected' : null}"
                          onclick="selectRole(${index}, 'C')">⚔️输出</div>
-                    <div class="role-option-btn role-n"
+                    <div class="role-option-btn role-n ${player.preferredRole === 'N' ? 'selected' : null}"
                          onclick="selectRole(${index}, 'N')">🩹治疗</div>
                 </div>
             </div>
