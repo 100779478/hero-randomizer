@@ -7,7 +7,7 @@
     <link rel="icon"
           href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
     <style>
-        /* Markdown 弹窗样式 */
+        /* Markdown 弹窗样式优化 - 修复版 */
         .md-modal {
             display: none;
             position: fixed;
@@ -16,37 +16,43 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(0, 0, 0, 0.95);
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(5px);
         }
 
         .md-modal-content {
-            background: #1e1e1e;
-            border-radius: 12px;
-            width: 90%;
-            height: 80%;
-            max-width: 1000px;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            border-radius: 16px;
+            width: 85%;
+            height: 85%;
+            max-width: 900px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 0 30px rgba(255, 204, 0, 0.3);
+            box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
             border: 2px solid #ffcc00;
+            overflow: hidden;
         }
 
         .md-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
-            background: #2a2a2a;
-            border-bottom: 1px solid #444;
-            border-radius: 12px 12px 0 0;
+            padding: 20px 25px;
+            background: linear-gradient(90deg, #2a2a2a 0%, #333 100%);
+            border-bottom: 2px solid #ffcc00;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
         .md-title {
             color: #ffcc00;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 20px;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .close-md {
@@ -54,114 +60,270 @@
             border: none;
             color: white;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(231, 87, 87, 0.3);
         }
 
         .close-md:hover {
             background: #ff4444;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
         }
 
         .md-body {
             flex: 1;
-            padding: 20px;
+            padding: 30px;
             overflow-y: auto;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
             line-height: 1.6;
+            font-size: 15px;
         }
 
-        /* 段落 */
-        .md-body p {
-            margin: 10px 0;
-        }
-
-        /* 标题 */
-        .md-body h1, .md-body h2, .md-body h3, .md-body h4, .md-body h5, .md-body h6 {
+        /*!* Markdown 内容样式优化 - 修复重影和列表问题 *!*/
+        .md-body h1 {
             color: #ffcc00;
-            margin-top: 20px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin: 25px 0 15px 0;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #ffcc00;
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.3);
         }
 
-        /* 列表 */
-        .md-body ul, .md-body ol {
-            margin: 10px 0 10px 20px;
-            padding-left: 20px;
+        .md-body h1:first-child {
+            margin-top: 0;
         }
 
-        .md-body li {
-            margin: 5px 0;
-        }
-
-        /* 引用 */
-        .md-body blockquote {
-            border-left: 4px solid #ffcc00;
+        .md-body h2 {
+            color: #ffcc00;
+            font-size: 22px;
+            margin: 20px 0 12px 0;
             padding-left: 15px;
-            margin: 15px 0;
-            color: #ccc;
+            border-left: 4px solid #ffcc00;
+            background: linear-gradient(90deg, rgba(255, 204, 0, 0.1) 0%, transparent 100%);
+            padding: 10px 15px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .md-body h3 {
+            color: #ff9966;
+            font-size: 18px;
+            margin: 18px 0 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #444;
+        }
+
+        .md-body h4 {
+            color: #66ccff;
+            font-size: 16px;
+            margin: 15px 0 8px 0;
+        }
+
+        .md-body p {
+            margin: 12px 0;
+            text-align: justify;
+        }
+
+        .md-body strong {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+
+        .md-body em {
+            color: #ff9966;
             font-style: italic;
         }
 
-        /* 代码块 & 行内代码 */
-        .md-body pre {
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-            border-left: 4px solid #ffcc00;
-            margin: 10px 0;
-        }
-
         .md-body code {
-            background: #2a2a2a;
-            padding: 2px 6px;
-            border-radius: 4px;
+            background: rgba(255, 204, 0, 0.1);
             color: #ff9966;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            font-size: 14px;
         }
 
-        /* 表格 */
-        .md-body table {
-            width: 100%;
-            border-collapse: collapse;
+        .md-body pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            border-left: 5px solid #ffcc00;
             margin: 15px 0;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
-        .md-body th, .md-body td {
-            border: 1px solid #555;
-            padding: 8px 12px;
+        .md-body pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: #e0e0e0;
+        }
+
+        /* 修复列表样式 - 数字序号位置问题 */
+        .md-body ul, .md-body ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        .md-body li {
+            margin: 8px 0;
+            padding: 4px 0;
+            position: relative;
             text-align: left;
         }
 
-        .md-body th {
-            background: #333;
-            color: #ffcc00;
+        /* 无序列表样式 */
+        .md-body ul {
+            list-style: none;
         }
 
-        /* 查看文档按钮样式 */
-        #viewDocBtn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            border-radius: 25px;
-            padding: 10px 20px;
-            cursor: pointer;
+        .md-body ul li {
+            padding-left: 20px;
+        }
+
+        .md-body ul li:before {
+            content: "•";
+            color: #ffcc00;
             font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.5);
+            position: absolute;
+            left: 0;
+            top: 2px;
+            font-size: 18px;
+        }
+
+        /* 有序列表样式 */
+        .md-body ol {
+        }
+
+        .md-body ol li {
+            padding-left: 30px;
+        }
+
+        .md-body ol li:before {
+            color: #ffcc00;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 2px;
+            min-width: 25px;
+            text-align: right;
+        }
+
+        .md-body blockquote {
+            border-left: 4px solid #ffcc00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            background: rgba(255, 204, 0, 0.05);
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #ccc;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .md-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .md-body th {
+            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
+            color: #000;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .md-body td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #444;
+            color: #e0e0e0;
+        }
+
+        .md-body tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .md-body tr:hover {
+            background: rgba(255, 204, 0, 0.1);
+        }
+
+        .md-body hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #ffcc00 50%, transparent 100%);
+            margin: 25px 0;
+        }
+
+        .md-body a {
+            color: #66ccff;
+            text-decoration: none;
+            border-bottom: 1px dotted #66ccff;
             transition: all 0.3s ease;
         }
 
+        .md-body a:hover {
+            color: #ffcc00;
+            border-bottom: 1px solid #ffcc00;
+        }
+
+        /* 自定义滚动条 */
+        .md-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .md-body::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .md-body::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
+            border-radius: 4px;
+        }
+
+        .md-body::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
+        }
+
+        /* 查看文档按钮样式优化 */
+        #viewDocBtn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
+            color: #000;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(255, 204, 0, 0.4);
+            transition: all 0.3s ease;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         #viewDocBtn:hover {
-            background: #ffaa00;
-            transform: scale(1.05);
+            background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 204, 0, 0.6);
         }
     </style>
 </head>
@@ -321,6 +483,7 @@
 </div>
 
 <script src="js/script.js?v=1.3"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
     // Markdown 弹窗控制
     const mdModal = document.getElementById('mdModal');
@@ -357,7 +520,6 @@
     function loadMarkdownFile() {
         mdContent.innerHTML = '<div style="text-align: center; color: #ccc;"><p>加载说明文档中...</p></div>';
 
-        // 尝试加载不同的 Markdown 文件
         const mdFiles = [
             'README.md',
             'readme.md',
@@ -373,98 +535,35 @@
         function tryLoadNextFile() {
             if (currentFileIndex >= mdFiles.length) {
                 mdContent.innerHTML = `
-                    <div style="text-align: center; color: #ff6666;">
-                        <h3>❌ 未找到说明文档</h3>
-                        <p>请在项目根目录下创建 README.md 文件</p>
-                        <p>或者将说明文档命名为：README.md、readme.md、documentation.md</p>
-                    </div>
-                `;
+                <div style="text-align: center; color: #ff6666;">
+                    <h3>❌ 未找到说明文档</h3>
+                    <p>请在项目根目录下创建 README.md 文件</p>
+                    <p>或者将说明文档命名为：README.md、readme.md、documentation.md</p>
+                </div>
+            `;
                 return;
             }
 
             const filePath = mdFiles[currentFileIndex];
             fetch(filePath)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('文件不存在');
-                    }
+                    if (!response.ok) throw new Error('文件不存在');
                     return response.text();
                 })
                 .then(markdown => {
-                    // 简单的 Markdown 解析（你可以用更复杂的库如 marked.js）
-                    const html = parseMarkdown(markdown);
-                    mdContent.innerHTML = html;
+                    // 使用 marked.js 渲染 Markdown
+                    mdContent.innerHTML = marked.parse(markdown, {
+                        headerIds: false, // 不自动生成 id
+                        mangle: false     // 禁用电子邮件自动转义
+                    });
                 })
-                .catch(error => {
+                .catch(() => {
                     currentFileIndex++;
                     tryLoadNextFile();
                 });
         }
 
         tryLoadNextFile();
-    }
-
-    function parseMarkdown(markdown) {
-        if (!markdown) return '';
-
-        let html = markdown;
-
-        // 统一换行符
-        html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-        // 代码块（优先处理，防止被后面规则污染）
-        html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-
-        // 行内代码
-        html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-
-        // 标题（h1 - h6）
-        html = html
-            .replace(/^###### (.*)$/gim, '<h6>$1</h6>')
-            .replace(/^##### (.*)$/gim, '<h5>$1</h5>')
-            .replace(/^#### (.*)$/gim, '<h4>$1</h4>')
-            .replace(/^### (.*)$/gim, '<h3>$1</h3>')
-            .replace(/^## (.*)$/gim, '<h2>$1</h2>')
-            .replace(/^# (.*)$/gim, '<h1>$1</h1>');
-
-        // 粗体 & 斜体（顺序要先粗体）
-        html = html
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/__(.*?)__/g, '<strong>$1</strong>')
-            .replace(/_(.*?)_/g, '<em>$1</em>');
-
-        // 链接
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#ffcc00;">$1</a>');
-
-        // 图片
-        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;">');
-
-        // 引用
-        html = html.replace(/^> (.*)$/gim, '<blockquote>$1</blockquote>');
-
-        // 无序列表
-        html = html.replace(/^\s*[-+*] (.*)$/gim, '<li>$1</li>');
-        html = html.replace(/(<li>.*<\/li>)(?![\s\S]*<\/ul>)/gims, '<ul>$1</ul>');
-
-        // 有序列表
-        html = html.replace(/^\s*\d+\.\s+(.*)$/gim, '<li>$1</li>');
-        html = html.replace(/(<li>.*<\/li>)(?![\s\S]*<\/ol>)/gims, '<ol>$1</ol>');
-
-        // 水平线
-        html = html.replace(/^(-{3,}|\*{3,}|_{3,})$/gim, '<hr>');
-
-        // 段落包装（避免包裹已有块级标签）
-        html = html
-            .replace(/^(?!<h\d|<ul>|<ol>|<li>|<blockquote>|<pre>|<img|<hr)(.+)$/gim, '<p>$1</p>')
-            .replace(/\n{2,}/g, '\n');
-
-        // 清理多余换行和空段落
-        html = html
-            .replace(/<p>\s*<\/p>/g, '')
-            .replace(/\n/g, '');
-
-        return html;
     }
 
 </script>
