@@ -70,6 +70,8 @@ const presetPlayers = [
     {name: "傲娇姬", level: 1, preferredRole: 'any'},
     {name: "巴蒂", level: 1, preferredRole: 'any'},
     {name: "豪门", level: 1, preferredRole: 'any'},
+    {name: "十年", level: 1, preferredRole: 'any'},
+    {name: "拔刀能留住落樱么", level: 1, preferredRole: 'any'},
     {name: '卖糖的麦兜', level: 1, preferredRole: 'any'},
     {name: 'Meditatg', level: 1, preferredRole: 'any'},
     {name: 'PeanutFan', level: 1, preferredRole: 'any'},
