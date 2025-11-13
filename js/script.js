@@ -41,7 +41,6 @@ const presetPlayers = [
     {name: '嗡嗡叫', level: 2, preferredRole: 'any'},
     {name: "小岳", level: 2, preferredRole: 'any'},
     {name: 'vison', level: 2, preferredRole: 'any'},
-    {name: '扮猪吃饲料', level: 2, preferredRole: 'any'},
     {name: "八级大狂风", level: 2, preferredRole: 'any'},
     {name: "吼爹", level: 2, preferredRole: 'any'},
     {name: "蓝喵", level: 2, preferredRole: 'any'},
