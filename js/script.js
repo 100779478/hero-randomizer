@@ -21,35 +21,36 @@ let heroPool = [
 
 // 预设玩家数据
 const presetPlayers = [
-    {name: '狗哥', level: 3, preferredRole: 'any'},
-    {name: '小宇', level: 3, preferredRole: 'any'},
-    {name: '孙妈', level: 3, preferredRole: 'any'},
-    {name: '怪物', level: 3, preferredRole: 'any'},
-    {name: '牢fu', level: 3, preferredRole: 'any'},
-    {name: 'lianhua', level: 3, preferredRole: 'any'},
-    {name: '礼貌哥', level: 3, preferredRole: 'any'},
-    {name: "婆娑月", level: 3, preferredRole: 'any'},
-    {name: "口水哩啦子", level: 3, preferredRole: 'any'},
-    {name: "小阳", level: 3, preferredRole: 'any'},
-    {name: '🍆', level: 2, preferredRole: 'any'},
-    {name: '内鬼', level: 2, preferredRole: 'any'},
-    {name: "Evenstar", level: 2, preferredRole: 'any'},
+    {name: '狗哥', level: 4, preferredRole: 'any'},
+    {name: '小宇', level: 4, preferredRole: 'any'},
+    {name: '孙妈', level: 4, preferredRole: 'any'},
+    {name: '怪物', level: 4, preferredRole: 'any'},
+    {name: '牢fu', level: 4, preferredRole: 'any'},
+    {name: 'lianhua', level: 4, preferredRole: 'any'},
+    {name: '礼貌哥', level: 4, preferredRole: 'any'},
+    {name: "婆娑月", level: 4, preferredRole: 'any'},
+    {name: "口水哩啦子", level: 4, preferredRole: 'any'},
+    {name: "小阳", level: 4, preferredRole: 'any'},
+    {name: '🍆', level: 3, preferredRole: 'any'},
+    {name: '内鬼', level: 3, preferredRole: 'any'},
+    {name: "Evenstar", level: 3, preferredRole: 'any'},
+    {name: 'xiao99', level: 3, preferredRole: 'any'},
+    {name: '夏目蓝', level: 3, preferredRole: 'any'},
+    {name: '别再打了啦', level: 3, preferredRole: 'any'},
+    {name: "蓝喵", level: 3, preferredRole: 'any'},
+    {name: '腦內放映', level: 3, preferredRole: 'any'},
     {name: '白', level: 2, preferredRole: 'any'},
-    {name: 'xiao99', level: 2, preferredRole: 'any'},
-    {name: '夏目蓝', level: 2, preferredRole: 'any'},
     {name: "RickyTT", level: 2, preferredRole: 'any'},
-    {name: '别再打了啦', level: 2, preferredRole: 'any'},
     {name: '嗡嗡叫', level: 2, preferredRole: 'any'},
     {name: "小岳", level: 2, preferredRole: 'any'},
     {name: 'vison', level: 2, preferredRole: 'any'},
     {name: "八级大狂风", level: 2, preferredRole: 'any'},
     {name: "吼爹", level: 2, preferredRole: 'any'},
-    {name: "蓝喵", level: 2, preferredRole: 'any'},
     {name: '帕帕尔', level: 2, preferredRole: 'any'},
-    {name: '腦內放映', level: 2, preferredRole: 'any'},
     {name: '卖糖的麦兜', level: 2, preferredRole: 'any'},
     {name: '小怡', level: 2, preferredRole: 'any'},
     {name: '七崽', level: 2, preferredRole: 'any'},
+    {name: "巴蒂", level: 2, preferredRole: 'any'},
     {name: '小匕首', level: 1, preferredRole: 'any'},
     {name: '齐格勒', level: 1, preferredRole: 'any'},
     {name: '夏风', level: 1, preferredRole: 'any'},
@@ -69,7 +70,6 @@ const presetPlayers = [
     {name: "ONENONLY", level: 1, preferredRole: 'any'},
     {name: "Hakunamtata", level: 1, preferredRole: 'any'},
     {name: "傲娇姬", level: 1, preferredRole: 'any'},
-    {name: "巴蒂", level: 1, preferredRole: 'any'},
     {name: "豪门", level: 1, preferredRole: 'any'},
     {name: "十年", level: 1, preferredRole: 'any'},
     {name: "拔刀能留住落樱么", level: 1, preferredRole: 'any'},
@@ -400,7 +400,7 @@ function renderPlayerSelector() {
                 </div>
                 <div class="role-selector" id="roleSelector-${index}">
                     <div class="role-option-btn role-any selected"
-                         onclick="selectRole(${index}, 'any')">任意</div>
+                         onclick="selectRole(${index}, 'any')">任意 </div>
                     <div class="role-option-btn role-t"
                          onclick="selectRole(${index}, 'T')">🛡️坦克</div>
                     <div class="role-option-btn role-c"
