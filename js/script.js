@@ -29,7 +29,7 @@ const presetPlayers = [
     {name: 'lianhua', level: 3, preferredRole: 'any'},
     {name: '礼貌哥', level: 3, preferredRole: 'any'},
     {name: "婆娑月", level: 3, preferredRole: 'any'},
-    {name: "口水哩啦子", level: 3, preferredRole: 'any'},
+    {name: "口水哩啦子", level: 2, preferredRole: 'any'},
     {name: '🍆', level: 2, preferredRole: 'any'},
     {name: "Evenstar", level: 2, preferredRole: 'any'},
     {name: '白', level: 2, preferredRole: 'any'},
