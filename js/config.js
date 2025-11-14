@@ -6,7 +6,7 @@ window.DEFAULT_HERO_POOL = [
 ];
 
 window.PRESET_PLAYERS = [
-    {name: '狗哥1', level: 4, preferredRole: 'any'},
+    {name: '狗哥', level: 4, preferredRole: 'any'},
     {name: '小宇', level: 4, preferredRole: 'any'},
     {name: '孙妈', level: 4, preferredRole: 'any'},
     {name: '怪物', level: 4, preferredRole: 'any'},
