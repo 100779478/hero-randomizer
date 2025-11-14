@@ -40,10 +40,6 @@ function setupEventListeners() {
     document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
     document.getElementById('clearPlayersBtn').addEventListener('click', clearPlayers);
 
-    // 模式切换
-    // document.getElementById('customModeBtn').addEventListener('click', switchToCustomMode);
-    // document.getElementById('selectModeBtn').addEventListener('click', switchToSelectMode);
-
     // 宿敌与绑定事件
     document.getElementById('addRivalBtn').addEventListener('click', addRival);
     document.getElementById('addBindBtn').addEventListener('click', addHeroBind);
@@ -63,12 +59,55 @@ function setupEventListeners() {
         }
     });
 
+    // 玩家名称输入框事件 - 添加过滤功能
+    const playerNameInput = document.getElementById('playerNameInput');
+
+    playerNameInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim().toLowerCase();
+        filterPlayerOptions(query);
+    });
+
     // 回车键添加玩家
-    document.getElementById('playerNameInput').addEventListener('keypress', function (e) {
+    playerNameInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             addPlayer();
         }
     });
+}
+
+// 过滤玩家选项
+function filterPlayerOptions(query) {
+    const playerSelector = document.getElementById('playerSelector');
+    const playerOptions = playerSelector.querySelectorAll('.player-option');
+
+    let hasVisibleOptions = false;
+
+    playerOptions.forEach(option => {
+        const playerNameElement = option.querySelector('div[onclick]');
+        const playerName = playerNameElement.textContent.toLowerCase();
+
+        // 检查是否匹配（包含匹配）
+        if (!query || playerName.includes(query)) {
+            option.style.display = 'block';
+            hasVisibleOptions = true;
+        } else {
+            option.style.display = 'none';
+        }
+    });
+
+    // 更新空状态显示
+    const emptyState = playerSelector.querySelector('.empty-state');
+    if (emptyState) {
+        if (!hasVisibleOptions && query) {
+            emptyState.textContent = '没有找到匹配的玩家';
+            emptyState.style.display = 'block';
+        } else if (!hasVisibleOptions && !query) {
+            emptyState.textContent = '所有玩家都已添加';
+            emptyState.style.display = 'block';
+        } else {
+            emptyState.style.display = 'none';
+        }
+    }
 }
 
 // 显示宿敌设置弹窗
@@ -282,23 +321,6 @@ function resetHeroPool() {
     }
 }
 
-// 切换到自定义模式
-// function switchToCustomMode() {
-//     document.getElementById('customModeBtn').classList.add('active');
-//     document.getElementById('selectModeBtn').classList.remove('active');
-//     document.getElementById('customMode').classList.remove('hidden');
-//     document.getElementById('selectMode').classList.add('hidden');
-// }
-//
-// // 切换到选择模式
-// function switchToSelectMode() {
-//     document.getElementById('selectModeBtn').classList.add('active');
-//     document.getElementById('customModeBtn').classList.remove('active');
-//     document.getElementById('selectMode').classList.remove('hidden');
-//     document.getElementById('customMode').classList.add('hidden');
-//     renderPlayerSelector();
-// }
-
 // 渲染玩家选择器
 function renderPlayerSelector() {
     const playerSelector = document.getElementById('playerSelector');
@@ -327,6 +349,12 @@ function renderPlayerSelector() {
                 </div>
             </div>
         `).join('');
+
+    // 确保所有选项默认显示
+    const playerOptions = playerSelector.querySelectorAll('.player-option');
+    playerOptions.forEach(option => {
+        option.style.display = 'block';
+    });
 }
 
 // 选择角色
@@ -365,6 +393,10 @@ function addPlayerFromList(playerName, selectedRole = 'any') {
         });
         renderPlayerList();
         renderPlayerSelector(); // 重新渲染选择器，移除已添加的玩家
+
+        // 清空输入框并重置过滤器
+        document.getElementById('playerNameInput').value = '';
+        filterPlayerOptions('');
     }
 }
 
@@ -385,6 +417,10 @@ function clearPlayers() {
         heroBinds.length = 0;
         renderRivalList();
         renderBindList();
+
+        // 清空输入框并重置过滤器
+        document.getElementById('playerNameInput').value = '';
+        filterPlayerOptions('');
     }
 }
 
@@ -421,10 +457,8 @@ function addPlayer() {
     levelInput.value = '3';
     roleInput.value = 'any';
 
-    // 如果当前在选择模式，重新渲染选择器
-    if (document.getElementById('selectModeBtn').classList.contains('active')) {
-        renderPlayerSelector();
-    }
+    // 重新渲染选择器，恢复所有选项显示
+    renderPlayerSelector();
 }
 
 // 渲染玩家列表
