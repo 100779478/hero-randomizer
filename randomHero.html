@@ -325,10 +325,18 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(255, 204, 0, 0.6);
         }
+        .backHome{
+            position: fixed;
+            top: 25px;
+            left: 25px;
+        }
     </style>
 </head>
 <body>
-
+<!-- 新增：左上角返回首页按钮 -->
+<button class="backHome" id="backHomeBtn" onclick="window.location.href='index.html'">
+    返回首页
+</button>
 <!-- 查看文档按钮 -->
 <button id="viewDocBtn">📖 使用说明</button>
 
