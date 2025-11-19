@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>OW内战·极速均衡分队</title>
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>Team</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif
+        }
+
+        body {
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 10px 6px 80px;
+            position: relative;
+            font-size: 13px
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto
+        }
+
+        #backHomeBtn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            padding: 8px 18px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            z-index: 9999;
+            box-shadow: 0 3px 15px rgba(255, 51, 102, .5);
+            transition: all .3s
+        }
+
+        #backHomeBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 51, 102, .7)
+        }
+
+        h2 {
+            text-align: center;
+            color: #ff3366;
+            font-size: 22px;
+            text-shadow: 0 0 8px rgba(255, 51, 102, .6);
+            margin: 15px 0
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 15px
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 15px 0
+        }
+
+        select, input {
+            background: #1e1e1e;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #fff;
+            outline: none;
+            font-size: 13px
+        }
+
+        .btn-small {
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 12px
+        }
+
+        .btn-big {
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 28px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer
+        }
+
+        .btn-big:hover, .btn-small:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 51, 102, .5)
+        }
+
+        .selected-info {
+            text-align: center;
+            margin: 10px 0;
+            color: #ffcc00;
+            font-weight: bold
+        }
+
+        .player-card {
+            background: rgba(30, 30, 30, .95);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, .4);
+            margin: 15px auto;
+            max-width: 1000px
+        }
+
+        .search-add {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap
+        }
+
+        .player-grid {
+            display: grid;
+            grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(20, 20, 20, .7);
+            border-radius: 8px;
+        }
+
+        .player-item {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            font-size: 13px;
+            font-weight: bold;
+            word-break: keep-all
+        }
+
+        .player-item:hover {
+            background: rgba(255, 51, 102, 0.25)
+        }
+
+        .player-item.selected {
+            background: #ff3366;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 51, 102, .7);
+            transform: scale(1.05)
+        }
+
+        /* 小巧精致弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.94);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border-radius: 14px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 88vh;
+            overflow-y: auto;
+            border: 2px solid #ff6699;
+            box-shadow: 0 0 30px rgba(255, 51, 102, .5)
+        }
+
+        .modal-header {
+            text-align: center;
+            padding: 16px 20px;
+            color: #ffcc00;
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #333
+        }
+
+        .teams-result {
+            display: grid;
+            grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            padding: 18px 20px
+        }
+
+        .result-team {
+            background: rgba(40, 40, 40, 0.9);
+            border-radius: 10px;
+            padding: 14px;
+            border: 2px solid
+        }
+
+        .result-team h3 {
+            font-size: 15px;
+            text-align: center;
+            margin-bottom: 10px
+        }
+
+        .team-list {
+            font-size: 13px;
+            line-height: 2;
+            text-align: center
+        }
+
+        .team-0 {
+            border-color: #ff3366
+        }
+
+        .team-0 h3 {
+            color: #ff3366
+        }
+
+        .team-1 {
+            border-color: #3366ff
+        }
+
+        .team-1 h3 {
+            color: #3366ff
+        }
+
+        .team-2 {
+            border-color: #00ff9d
+        }
+
+        .team-2 h3 {
+            color: #00ff9d
+        }
+
+        .team-3 {
+            border-color: #ffcc00
+        }
+
+        .team-3 h3 {
+            color: #ffcc00
+        }
+
+        .team-4 {
+            border-color: #ff8c00
+        }
+
+        .team-4 h3 {
+            color: #ff8c00
+        }
+
+        .team-5 {
+            border-color: #9c27b0
+        }
+
+        .team-5 h3 {
+            color: #9c27b0
+        }
+
+        .team-6 {
+            border-color: #00bcd4
+        }
+
+        .team-6 h3 {
+            color: #00bcd4
+        }
+
+        .team-7 {
+            border-color: #ff5722
+        }
+
+        .team-7 h3 {
+            color: #ff5722
+        }
+
+        .spectators {
+            margin: 15px 20px;
+            padding: 16px;
+            background: rgba(60, 60, 60, 0.7);
+            border-radius: 10px;
+            border: 1px dashed #888;
+            text-align: center;
+            font-size: 13px
+        }
+
+        .spectators h3 {
+            color: #ccc;
+            font-size: 15px;
+            margin-bottom: 10px
+        }
+
+        .spectators span {
+            display: inline-block;
+            margin: 4px 8px;
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px
+        }
+
+        .modal-buttons {
+            text-align: center;
+            padding: 15px
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            color: #ffcc00;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 13px;
+            border-top: 2px solid #ff3366;
+            backdrop-filter: blur(10px);
+            z-index: 1000
+        }
+    </style>
+</head>
+<body>
+
+<button id="backHomeBtn" onclick="window.location.href='index.html'">返回首页</button>
+
+<div class="container">
+    <h2>OW内战·极速均衡分队</h2>
+    <div class="subtitle">搜索 + 添加玩家 + 一键公平分队（等级均衡）</div>
+
+    <div class="controls">
+        <select id="modeSelect">
+            <option value="6">6v6 模式</option>
+            <option value="5">5v5 模式</option>
+        </select>
+        <button id="autoTeamBtn" class="btn-big">开始分队</button>
+        <button id="clearBtn" class="btn-big" style="background:#e75757">清空已选</button>
+    </div>
+
+    <div class="selected-info">
+        已选中 <span id="count">0</span> 人
+    </div>
+
+    <div class="player-card">
+        <div class="search-add">
+            <input type="text" id="searchInput" placeholder="搜索玩家..." oninput="filterPlayers()">
+            <input type="text" id="newName" placeholder="新玩家名字">
+            <select id="newLevel">
+                <option value="1">1星</option>
+                <option value="2" selected>2星</option>
+                <option value="3">3星</option>
+                <option value="4">4星</option>
+            </select>
+            <button class="btn-small" onclick="addCustomPlayer()">添加</button>
+        </div>
+        <div class="player-grid" id="playerGrid"></div>
+    </div>
+</div>
+
+<!-- 小巧弹窗 -->
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">分队结果（等级均衡）</div>
+        <div class="teams-result" id="teamsResult"></div>
+        <div class="spectators" id="spectators">
+            <h3>观战人员（<span id="specCount">0</span>人）</h3>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn-big" onclick="document.getElementById('resultModal').style.display='none'">关闭</button>
+        </div>
+    </div>
+</div>
+
+<div class="footer">瘸子出品 · 支持搜索+添加 · 等级均衡分队</div>
+
+<script src="js/config.js"></script>
+<script>
+    // 你的真实人员名单（已去空格）
+    const BASE_PLAYERS = window.PRESET_PLAYERS
+
+    let allPlayers = BASE_PLAYERS.map(p => ({...p}));
+    let selected = new Set();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderAll();
+        document.getElementById('autoTeamBtn').onclick = startBalance;
+        document.getElementById('clearBtn').onclick = () => {
+            selected.clear();
+            renderAll();
+        };
+    });
+
+    function renderAll() {
+        filterPlayers();
+        document.getElementById('count').textContent = selected.size;
+    }
+
+    function filterPlayers() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(keyword));
+        document.getElementById('playerGrid').innerHTML = filtered.map(p => `
+        <div class="player-item ${selected.has(p.name) ? 'selected' : ''}" onclick="toggle('${p.name}')">
+            ${p.name}
+        </div>
+    `).join('');
+    }
+
+    function toggle(name) {
+        selected.has(name) ? selected.delete(name) : selected.add(name);
+        renderAll();
+    }
+
+    function addCustomPlayer() {
+        const name = document.getElementById('newName').value.trim();
+        if (!name) return alert('请输入名字');
+        if (allPlayers.some(p => p.name === name)) return alert('该玩家已存在');
+        const level = parseInt(document.getElementById('newLevel').value);
+        allPlayers.push({name, level});
+        document.getElementById('newName').value = '';
+        renderAll();
+    }
+
+    // 分队逻辑（等级均衡）
+    function startBalance() {
+        if (selected.size < 10) return alert('至少10人才能开局');
+        const mode = parseInt(document.getElementById('modeSelect').value);
+        const teamSize = mode;
+        const teamsCount = Math.floor(selected.size / teamSize);
+        if (teamsCount === 0) return alert(`人数不足开${mode}v${mode}`);
+
+        let players = Array.from(selected).map(name => {
+            const p = allPlayers.find(x => x.name === name);
+            return {name, level: p.level};
+        }).sort((a, b) => b.level - a.level);
+
+        const teams = Array.from({length: teamsCount}, () => []);
+        players.forEach((p, i) => {
+            if (teams[i % teamsCount].length < teamSize) {
+                teams[i % teamsCount].push(p);
+            }
+        });
+
+        const spectators = players.slice(teamsCount * teamSize).map(p => p.name);
+        showResult(teams, spectators);
+    }
+
+    function showResult(teams, spectators) {
+        const names = ['红队', '蓝队', '绿队', '黄队', '橙队', '紫队', '青队', '深红队'];
+        let html = '';
+        teams.forEach((team, i) => {
+            html += `<div class="result-team team-${i}">
+            <h3>${names[i]}（${team.length}人）</h3>
+            <div class="team-list">${team.map(p => `<div>${p.name}</div>`).join('')}</div>
+        </div>`;
+        });
+        document.getElementById('teamsResult').innerHTML = html;
+        document.getElementById('spectators').innerHTML = `<h3>观战人员（${spectators.length}人）</h3>` +
+            (spectators.length ? spectators.map(n => `<span>${n}</span>`).join('') : '<div style="color:#888">无观战</div>');
+        document.getElementById('resultModal').style.display = 'flex';
+    }
+</script>
+</body>
+</html>

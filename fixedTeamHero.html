@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>OW内战工具 - 固定队随机英雄</title>
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 10px 6px 90px 6px;
+            position: relative;
+            font-size: 13px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(255, 51, 102, 0.6);
+        }
+
+        #backHomeBtn {
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            color: #fff;
+            border: none;
+            border-radius: 28px;
+            padding: 10px 22px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 9999;
+            box-shadow: 0 4px 18px rgba(255, 51, 102, 0.5);
+            transition: all .3s;
+        }
+
+        #backHomeBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(255, 51, 102, 0.7);
+        }
+
+        h2 {
+            text-align: center;
+            color: #ff3366;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(255, 51, 102, 0.6);
+            margin: 8px 0;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .switch-box {
+            display: flex;
+            justify-content: center;
+            margin: 12px 0;
+            gap: 20px;
+        }
+
+        .switch-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .col {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .card {
+            background: rgba(30, 30, 30, 0.95);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            height: 320px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-title {
+            color: #ffcc00;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        input.player-input, select.player-input {
+            background: #1e1e1e;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 8px 10px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            flex: 1;
+        }
+
+        select.player-input {
+            appearance: none;
+            background: #1e1e1e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff6699' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E") no-repeat right 10px center;
+            background-size: 10px;
+            padding-right: 32px;
+            cursor: pointer;
+        }
+
+        select.player-input option {
+            background: #1e1e1e;
+            color: #ffcc00;
+        }
+
+        .btn-small {
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .btn-small:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4);
+        }
+
+        .player-grid {
+            display: grid;
+            grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+            gap: 8px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px;
+            position: relative;
+            transition: all .2s;
+            height: 88px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .player-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 51, 102, 0.3);
+        }
+
+        .player-name {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .player-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-a, .btn-b {
+            flex: 1;
+            padding: 6px 0;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-a {
+            background: rgba(255, 51, 102, 0.6);
+            color: #fff;
+        }
+
+        .btn-b {
+            background: rgba(51, 102, 255, 0.6);
+            color: #fff;
+        }
+
+        .btn-del {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #e75757;
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            box-shadow: 0 2px 8px rgba(231, 87, 87, 0.5);
+        }
+
+        .btn-del:hover {
+            background: #ff4444;
+            transform: scale(1.1);
+        }
+
+        .team-row {
+            display: flex;
+            gap: 10px;
+            height: 320px;
+            margin-bottom: 12px;
+        }
+
+        .team-box {
+            flex: 1;
+            background: rgba(40, 40, 40, 0.9);
+            border-radius: 12px;
+            padding: 12px;
+            border: 3px solid;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .team-a {
+            border-color: #ff3366;
+        }
+
+        .team-b {
+            border-color: #3366ff;
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .team-title {
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .team-a .team-title {
+            color: #ff3366;
+        }
+
+        .team-b .team-title {
+            color: #3366ff;
+        }
+
+        .team-count {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .team-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .team-player {
+            background: rgba(255, 255, 255, 0.06);
+            border-left: 4px solid;
+            margin: 5px 0;
+            padding: 10px 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .team-a .team-player {
+            border-left-color: #ff3366;
+        }
+
+        .team-b .team-player {
+            border-left-color: #3366ff;
+        }
+
+        .btn-remove {
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            color: #fff;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 3px 12px rgba(255, 51, 102, 0.5);
+        }
+
+        .btn-remove:hover {
+            transform: scale(1.15);
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin: 18px 0;
+        }
+
+        .btn-big {
+            background: linear-gradient(135deg, #ff3366, #ff6699);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .btn-big.clear {
+            background: linear-gradient(135deg, #e75757, #ff4444);
+        }
+
+        .btn-big.re {
+            background: linear-gradient(135deg, #ff9900, #ffcc00);
+            color: #000;
+        }
+
+        .btn-big:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 51, 102, 0.5);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 720px;
+            border: 2px solid #ffcc00;
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.5);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            color: #ffcc00;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 14px;
+            font-weight: bold;
+            border-top: 3px solid #ff3366;
+            text-shadow: 0 0 12px rgba(255, 51, 0.6);
+            z-index: 1000;
+            backdrop-filter: blur(12px);
+            cursor: pointer;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 18px 0;
+            font-size: 13px;
+        }
+
+        .result-table th {
+            background: #333;
+            color: #ffcc00;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .result-table td {
+            padding: 8px 10px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .team-a-row {
+            background: rgba(255, 51, 102, 0.12);
+        }
+
+        .team-b-row {
+            background: rgba(51, 102, 255, 0.12);
+        }
+
+        .role-tag {
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .role-T {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        .role-C {
+            background: #44aa44;
+            color: #fff;
+        }
+
+        .role-N {
+            background: #4444ff;
+            color: #fff;
+        }
+
+        @media (max-width: 900px) {
+            .row, .team-row {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .card {
+                height: auto;
+                min-height: 380px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<button id="backHomeBtn" onclick="window.location.href='index.html'">返回首页</button>
+
+<div class="container">
+    <h2>OW内战工具 - 固定队随机英雄</h2>
+    <div class="switch-box">
+        <div class="switch-item">
+            <input type="checkbox" id="allowRepeat" checked>
+            <label for="allowRepeat">允许两队重复英雄</label>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-title">玩家列表（支持搜索）</div>
+                <div class="input-row">
+                    <input id="playerNameInput" class="player-input" placeholder="输入名字添加新玩家">
+                    <select id="playerLevel" class="player-input">
+                        <option value="1">⭐</option>
+                        <option value="2">⭐⭐</option>
+                        <option value="3" selected>⭐⭐⭐</option>
+                        <option value="4">⭐⭐⭐⭐</option>
+                    </select>
+                    <button id="addPlayerBtn" class="btn-small">添加</button>
+                </div>
+                <div class="player-grid" id="playerList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="team-row">
+        <div class="team-box team-a">
+            <div class="team-header">
+                <div class="team-title">A 队</div>
+                <div class="team-count" id="teamACount">0人</div>
+            </div>
+            <div class="team-list" id="teamAList">
+                <div style="text-align:center;color:#888;padding-top:90px;">暂无玩家</div>
+            </div>
+        </div>
+        <div class="team-box team-b">
+            <div class="team-header">
+                <div class="team-title">B 队</div>
+                <div class="team-count" id="teamBCount">0人</div>
+            </div>
+            <div class="team-list" id="teamBList">
+                <div style="text-align:center;color:#888;padding-top:90px;">暂无玩家</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-row">
+        <button id="clearPlayersBtn" class="btn-big clear">清空队伍</button>
+        <button id="startBtn" class="btn-big">开始分配英雄</button>
+    </div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div id="rollText" style="text-align:center;font-size:28px;color:#ffcc00;padding:60px 0;">分配中...</div>
+        <div id="finalResult" style="display:none;"></div>
+        <div class="modal-buttons" id="resultButtons" style="display:none;">
+            <button class="btn-big re" id="redrawBtn">重新抽取</button>
+            <button class="btn-big" onclick="modal.style.display='none'">关闭</button>
+        </div>
+    </div>
+</div>
+
+<div class="footer">瘸子🍆出品</div>
+
+<script src="js/config.js"></script>
+<script>
+    // ==================== 下面是完整的正确代码，直接替换原来的 script 即可 ====================
+
+    const DEFAULT_HERO_POOL = window.DEFAULT_HERO_POOL || []
+
+    const PRESET_PLAYERS = window.PRESET_PLAYERS || [];
+    let allPlayers = [], teamA = [], teamB = [];
+    let heroPool = DEFAULT_HERO_POOL.slice();
+    let globalUsed = new Set();     // 用于“不允许跨队重复”时记录已用英雄
+
+    const modal = document.getElementById('modal');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        PRESET_PLAYERS.forEach(p => {
+            const name = p.name?.trim();
+            if (name && !allPlayers.some(x => x.name === name)) {
+                allPlayers.push({name, level: p.level || 3});
+            }
+        });
+        renderPlayerList();
+        renderTeamLists();
+        setupEvents();
+    });
+
+    function setupEvents() {
+        document.getElementById('addPlayerBtn').onclick = addPlayer;
+        document.getElementById('clearPlayersBtn').onclick = () => {
+            if (confirm('仅清空两队，保留玩家列表？')) {
+                teamA = [];
+                teamB = [];
+                renderPlayerList();
+                renderTeamLists();
+            }
+        };
+        document.getElementById('startBtn').onclick = startDraw;
+        document.getElementById('redrawBtn').onclick = startDraw;
+        document.getElementById('playerNameInput').addEventListener('input', renderPlayerList);
+        document.getElementById('playerNameInput').addEventListener('keypress', e => e.key === 'Enter' && addPlayer());
+    }
+
+    function addPlayer() {
+        const name = document.getElementById('playerNameInput').value.trim();
+        if (!name) return alert('请输入名字');
+        if (allPlayers.some(p => p.name === name)) return alert('该玩家已存在');
+        allPlayers.push({name, level: 3});
+        document.getElementById('playerNameInput').value = '';
+        renderPlayerList();
+    }
+
+    function renderPlayerList() {
+        const search = document.getElementById('playerNameInput').value.trim().toLowerCase();
+        const unassigned = allPlayers.filter(p => !teamA.some(x => x.name === p.name) && !teamB.some(x => x.name === p.name));
+        const filtered = search ? unassigned.filter(p => p.name.toLowerCase().includes(search)) : unassigned;
+        document.getElementById('playerList').innerHTML = filtered.length ? filtered.map(p => `
+        <div class="player-card">
+            <button class="btn-del" onclick="removePlayer('${p.name}')">x</button>
+            <div class="player-name">${p.name}</div>
+            <div class="player-actions">
+                <button class="btn-a" onclick="moveToTeam('${p.name}','A')">A队</button>
+                <button class="btn-b" onclick="moveToTeam('${p.name}','B')">B队</button>
+            </div>
+        </div>`).join('') : '<div style="grid-column:1/-1;color:#888;text-align:center;padding:50px;">暂无玩家</div>';
+    }
+
+    function moveToTeam(name, team) {
+        const p = allPlayers.find(x => x.name === name);
+        if (!p || (team === 'A' ? teamA : teamB).some(x => x.name === name)) return;
+        (team === 'A' ? teamA : teamB).push(p);
+        renderPlayerList();
+        renderTeamLists();
+    }
+
+    function removePlayer(name) {
+        allPlayers = allPlayers.filter(p => p.name !== name);
+        teamA = teamA.filter(p => p.name !== name);
+        teamB = teamB.filter(p => p.name !== name);
+        renderPlayerList();
+        renderTeamLists();
+    }
+
+    window.removeFromTeam = function (t, i) {
+        if (t === 'A') teamA.splice(i, 1);
+        else teamB.splice(i, 1);
+        renderPlayerList();
+        renderTeamLists();
+    };
+
+    function renderTeamLists() {
+        document.getElementById('teamACount').textContent = teamA.length + '人';
+        document.getElementById('teamAList').innerHTML = teamA.length ? teamA.map((p, i) => `
+        <div class="team-player">
+            <div>${p.name}</div>
+            <button class="btn-remove" onclick="removeFromTeam('A',${i})">x</button>
+        </div>`).join('') : '<div style="text-align:center;color:#888;padding-top:90px;">暂无玩家</div>';
+
+        document.getElementById('teamBCount').textContent = teamB.length + '人';
+        document.getElementById('teamBList').innerHTML = teamB.length ? teamB.map((p, i) => `
+        <div class="team-player">
+            <div>${p.name}</div>
+            <button class="btn-remove" onclick="removeFromTeam('B',${i})">x</button>
+        </div>`).join('') : '<div style="text-align:center;color:#888;padding-top:90px;">暂无玩家</div>';
+    }
+
+    async function startDraw() {
+        if (teamA.length !== teamB.length || ![5, 6].includes(teamA.length)) {
+            return alert('两队人数必须相等且为5或6人！');
+        }
+
+        const size = teamA.length;
+        const needT = size === 5 ? 1 : 2;
+        const needC = 2;
+        const needN = size - needT - needC;
+
+        modal.style.display = 'flex';
+        document.getElementById('rollText').style.display = 'block';
+        document.getElementById('finalResult').style.display = 'none';
+        document.getElementById('resultButtons').style.display = 'none';
+
+        const roll = setInterval(() => {
+            const h = heroPool[Math.floor(Math.random() * heroPool.length)];
+            document.getElementById('rollText').textContent = h ? h.slice(2) : '分配中...';
+        }, 70);
+
+        await new Promise(r => setTimeout(r, 1800));
+        clearInterval(roll);
+
+        globalUsed.clear();
+        const allowCrossRepeat = document.getElementById('allowRepeat').checked;
+
+        const resultA = assignTeam(teamA.slice(), needT, needC, needN, allowCrossRepeat);
+        if (!resultA) {
+            modal.style.display = 'none';
+            return;
+        }
+        const resultB = assignTeam(teamB.slice(), needT, needC, needN, allowCrossRepeat);
+        if (!resultB) {
+            modal.style.display = 'none';
+            return;
+        }
+
+        document.getElementById('rollText').style.display = 'none';
+        document.getElementById('finalResult').style.display = 'block';
+        document.getElementById('resultButtons').style.display = 'flex';
+
+        document.getElementById('finalResult').innerHTML = `
+        <h3 style="text-align:center;color:#ffcc00;margin:18px 0;">${size}v${size} 最终结果</h3>
+        <table class="result-table">
+            <thead><tr><th>队伍</th><th>玩家</th><th>英雄</th><th>位置</th></tr></thead>
+            <tbody>
+                ${resultA.map(p => `<tr class="team-a-row"><td style="color:#ff3366;font-weight:bold;">A队</td><td>${p.name}</td><td>${p.hero}</td><td><span class="role-tag role-${p.role}">${p.role === 'T' ? '坦克' : p.role === 'N' ? '治疗' : '输出'}</span></td></tr>`).join('')}
+                ${resultB.map(p => `<tr class="team-b-row"><td style="color:#3366ff;font-weight:bold;">B队</td><td>${p.name}</td><td>${p.hero}</td><td><span class="role-tag role-${p.role}">${p.role === 'T' ? '坦克' : p.role === 'N' ? '治疗' : '输出'}</span></td></tr>`).join('')}
+            </tbody>
+        </table>`;
+    }
+
+    // 核心分配函数（已加入队内绝对不重复 + 全局唯一控制）
+    function assignTeam(team, needT, needC, needN, allowCrossRepeat) {
+        const result = [];
+        const roles = [];
+        for (let i = 0; i < needT; i++) roles.push('T');
+        for (let i = 0; i < needC; i++) roles.push('C');
+        for (let i = 0; i < needN; i++) roles.push('N');
+
+        // 随机打乱玩家顺序
+        for (let i = team.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [team[i], team[j]] = [team[j], team[i]];
+        }
+
+        for (let i = 0; i < team.length; i++) {
+            const role = roles[i];
+
+            let candidates = heroPool
+                .filter(h => h.startsWith(role + '-'))
+                .map(h => h.slice(2));
+
+            // 1. 队内绝对不重复（最重要）
+            candidates = candidates.filter(h => !result.some(x => x.hero === h));
+
+            // 2. 不允许跨队重复时，再排除全局已用
+            if (!allowCrossRepeat) {
+                candidates = candidates.filter(h => !globalUsed.has(h));
+            }
+
+            if (candidates.length === 0) {
+                alert(`英雄池不足！${role === 'T' ? '坦克' : role === 'C' ? '治疗' : '输出'}位已无可用英雄\n请扩大英雄池或勾选“允许两队重复英雄”`);
+                return null;
+            }
+
+            const idx = Math.floor(Math.random() * candidates.length);
+            const hero = candidates[idx];
+
+            result.push({name: team[i].name, hero, role});
+            globalUsed.add(hero);
+        }
+        return result;
+    }
+</script>
+</body>
+</html>

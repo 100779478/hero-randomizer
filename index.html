@@ -3,375 +3,353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OW内战工具 - 模式选择</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
+    <title>OW内战工具 - 赛博模式选择</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>Neon</text></svg>">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
 
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #e0e0e0;
+            background: #0d0b1a;
+            color: #e0faff;
             min-height: 100vh;
+            font-family: 'Orbitron', 'Microsoft YaHei', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            overflow-x: hidden;
+            overflow: hidden;
+            position: relative;
         }
 
+        /* 赛博网格背景 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                    linear-gradient(90deg, rgba(138, 43, 226, 0.05) 1px, transparent 1px),
+                    linear-gradient(rgba(138, 43, 226, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            animation: gridMove 20s linear infinite;
+        }
+        @keyframes gridMove { 0%{transform:translate(0,0)} 100%{transform:translate(40px,40px)} }
+
+        /* 扫描线效果 */
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
+            pointer-events: none;
+            animation: scan 8s linear infinite;
+        }
+        @keyframes scan { 0%{transform:translateY(-100%)} 100%{transform:translateY(100%)} }
+
         .container {
-            max-width: 900px;
+            max-width: 1400px;
             width: 100%;
             text-align: center;
-            padding: 30px;
-            background: rgba(30, 30, 46, 0.8);
+            padding: 40px 25px;
+            background: rgba(10, 8, 30, 0.85);
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 204, 0, 0.2);
+            box-shadow:
+                    0 0 30px rgba(138, 43, 226, 0.6),
+                    inset 0 0 60px rgba(0, 255, 255, 0.1);
+            border: 1px solid #8a2be2;
             position: relative;
-            overflow: hidden;
+            z-index: 1;
+            backdrop-filter: blur(12px);
         }
 
         .container::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #ffcc00, #ffaa00, #ff8800, #ffcc00);
-            background-size: 200% 100%;
-            animation: shimmer 3s infinite linear;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, #8a2be2, #00ffff, #ff00ff, #8a2be2);
+            background-size: 300% 100%;
+            animation: neonFlow 4s infinite linear;
         }
-
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
+        @keyframes neonFlow { 0%,100%{background-position:0%} 50%{background-position:100%} }
 
         .header {
-            margin-bottom: 40px;
+            margin-bottom: 50px;
             position: relative;
         }
 
         .logo {
-            font-size: 48px;
-            margin-bottom: 15px;
-            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+            font-size: 80px;
+            margin-bottom: 10px;
+            text-shadow:
+                    0 0 20px #8a2be2,
+                    0 0 40px #00ffff;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%,100% { text-shadow: 0 0 20px #8a2be2, 0 0 40px #00ffff; }
+            14% { text-shadow: -5px 0 #ff00ff, 5px 0 #00ffff; }
+            15% { text-shadow: 5px 0 #ff00ff, -5px 0 #00ffff; }
+            16% { text-shadow: 0 0 20px #8a2be2, 0 0 40px #00ffff; }
         }
 
         h1 {
-            color: #ffcc00;
-            font-size: 42px;
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #8a2be2, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 4px;
             margin-bottom: 10px;
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-            letter-spacing: 1px;
         }
 
         .subtitle {
             font-size: 18px;
-            color: #aaa;
-            max-width: 600px;
-            margin: 0 auto 30px;
-            line-height: 1.6;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            opacity: 0.9;
         }
 
         .mode-selection {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin: 40px 0;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin: 50px 0;
         }
 
         .mode-card {
-            background: linear-gradient(145deg, #252540, #1e1e38);
+            background: linear-gradient(135deg, rgba(20,10,60,0.8), rgba(10,5,40,0.9));
             border-radius: 16px;
-            padding: 30px 25px;
+            padding: 35px 25px;
             text-align: center;
-            transition: all 0.3s ease;
             cursor: pointer;
-            border: 2px solid rgba(255, 204, 0, 0.3);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid transparent;
             position: relative;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100%;
-        }
-
-        .mode-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
-            border-color: rgba(255, 204, 0, 0.6);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
         }
 
         .mode-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #ffcc00, #ffaa00);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(138,43,226,0.15) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .mode-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .mode-card:hover {
+            transform: translateY(-15px) scale(1.03);
+            border: 1px solid #8a2be2;
+            box-shadow:
+                    0 0 40px rgba(138, 43, 226, 0.8),
+                    0 0 80px rgba(0, 255, 255, 0.4);
         }
 
         .mode-icon {
-            font-size: 50px;
+            font-size: 40px;
             margin-bottom: 20px;
-            color: #ffcc00;
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            text-shadow: 0 0 30px currentColor;
         }
 
         .mode-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #ffcc00;
+            font-size: 26px;
+            font-weight: 900;
+            margin: 15px 0;
+            color: #8a2be2;
+            text-shadow: 0 0 15px #8a2be2;
         }
 
         .mode-description {
             font-size: 15px;
-            line-height: 1.6;
-            color: #ccc;
-            margin-bottom: 20px;
-            flex-grow: 1;
+            line-height: 1.7;
+            color: #00ffff;
+            margin-bottom: 25px;
+            opacity: 0.9;
         }
 
         .mode-features {
-            text-align: left;
+            text-align: center !important;   /* 重点：居中 */
             width: 100%;
-            margin-bottom: 20px;
+            margin: 20px 0;
+            padding: 0 20px;
         }
 
         .mode-features li {
-            margin-bottom: 8px;
-            padding-left: 20px;
-            position: relative;
+            margin: 12px 0;
+            padding-left: 0 !important;
             font-size: 14px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            position: relative;
         }
 
         .mode-features li::before {
-            content: "✓";
-            color: #4CAF50;
+            content: ">";
+            color: #00ffff;
             position: absolute;
-            left: 0;
-            font-weight: bold;
+            left: -20px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .mode-btn {
-            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
-            color: #000;
-            border: none;
-            border-radius: 30px;
-            padding: 12px 30px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            margin-top: 20px;
+            background: transparent;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 12px 32px;
+            font-family: 'Orbitron';
+            font-weight: 700;
             font-size: 16px;
-            margin-top: auto;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s;
+            text-shadow: 0 0 10px #00ffff;
+            box-shadow: 0 0 20px rgba(0,255,255,0.4);
+        }
+
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,255,0.3), transparent);
+            transition: left 0.6s;
         }
 
         .mode-btn:hover {
-            background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(255, 204, 0, 0.6);
+            color: #0d0b1a;
+            background: #00ffff;
+            text-shadow: none;
+            box-shadow: 0 0 30px #00ffff;
+        }
+
+        .mode-btn:hover::before {
+            left: 100%;
         }
 
         .footer {
-            margin-top: 40px;
-            color: #888;
+            margin-top: 60px;
+            color: #8a2be2;
             font-size: 14px;
-            text-align: center;
-            padding: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            width: 100%;
+            text-shadow: 0 0 10px #8a2be2;
+            letter-spacing: 1px;
         }
 
         .footer a {
-            color: #ffcc00;
+            color: #00ffff;
             text-decoration: none;
-            transition: color 0.3s;
+            position: relative;
         }
 
-        .footer a:hover {
-            color: #ffaa00;
-            text-decoration: underline;
+        .footer a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #00ffff;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #00ffff;
         }
 
-        /* 响应式设计 */
+        .footer a:hover::after {
+            width: 100%;
+        }
+
+        @media (max-width: 1200px) {
+            .mode-selection { grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        }
         @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 32px;
-            }
-
-            .mode-selection {
-                grid-template-columns: 1fr;
-            }
-
-            .mode-card {
-                padding: 20px;
-            }
+            .mode-selection { grid-template-columns: 1fr; }
+            h1 { font-size: 36px; }
+            .logo { font-size: 60px; }
+            .container { padding: 30px 20px; }
         }
-
-        /* 动画效果 */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .mode-card {
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        .mode-card:nth-child(1) { animation-delay: 0.1s; }
-        .mode-card:nth-child(2) { animation-delay: 0.2s; }
-        .mode-card:nth-child(3) { animation-delay: 0.3s; }
-        .mode-card:nth-child(4) { animation-delay: 0.4s; }
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="header">
-        <div class="logo">🎮</div>
-        <h1>OW内战工具</h1>
-        <p class="subtitle">选择适合您团队需求的模式，开始公平有趣的守望先锋内战分配</p>
+        <div class="logo">这特么是小分队</div>
+        <h1>OW INNER WAR</h1>
+        <p class="subtitle">选择命运 · 进入战场</p>
     </div>
 
     <div class="mode-selection">
-        <!-- 标准模式 -->
-        <div class="mode-card" onclick="selectMode('standard')">
-            <div class="mode-icon">⚔️</div>
-            <div class="mode-title">标准模式</div>
-            <div class="mode-description">
-                经典的队伍分配模式，平衡队伍实力，自动分配英雄，适合大多数内战场景。
-            </div>
+        <div class="mode-card" onclick="selectMode('randomTeamHero')">
+            <div class="mode-icon">全随机模式</div>
+            <div class="mode-description">玩家随机分组 · 英雄随机分配 · 绝对公平</div>
             <ul class="mode-features">
-                <li>智能队伍平衡算法</li>
-                <li>自动英雄分配</li>
-                <li>支持自定义英雄池</li>
-                <li>玩家等级权重系统</li>
+                <li>完全随机分组</li>
+                <li>英雄随机分配</li>
+                <li>实力自动平衡</li>
+                <li>适合全新阵容</li>
             </ul>
-            <button class="mode-btn">开始使用 →</button>
+            <button class="mode-btn">ENTER →</button>
         </div>
 
-        <!-- 快速模式 -->
-        <div class="mode-card" onclick="selectMode('quick')">
-            <div class="mode-icon">🚀</div>
-            <div class="mode-title">快速模式</div>
-            <div class="mode-description">
-                简化版分配工具，快速生成队伍，适合时间紧迫或休闲对战。
-            </div>
+        <div class="mode-card" onclick="selectMode('fixedTeamHero')">
+            <div class="mode-icon">固定队伍</div>
+            <div class="mode-description">队伍不变 · 仅随机英雄 · 适合固定队友</div>
             <ul class="mode-features">
-                <li>极速队伍生成</li>
-                <li>简化操作界面</li>
-                <li>预设英雄池</li>
-                <li>一键分配功能</li>
+                <li>保留原有队伍</li>
+                <li>英雄随机分配</li>
+                <li>支持自定义玩家</li>
+                <li>适合开黑车队</li>
             </ul>
-            <button class="mode-btn">开始使用 →</button>
+            <button class="mode-btn">ENTER →</button>
         </div>
 
-        <!-- 竞技模式 -->
-        <div class="mode-card" onclick="selectMode('competitive')">
-            <div class="mode-icon">🏆</div>
-            <div class="mode-title">竞技模式</div>
-            <div class="mode-description">
-                高级分配选项，支持更多自定义设置，适合高水平玩家和正式比赛。
-            </div>
+        <div class="mode-card" onclick="selectMode('chaos')">
+            <div class="mode-icon">大乱炖分队</div>
+            <div class="mode-description">无规则 · 无限制 · 纯粹的混乱与快乐</div>
             <ul class="mode-features">
-                <li>高级平衡算法</li>
-                <li>角色限制设置</li>
-                <li>地图特定英雄池</li>
-                <li>比赛历史记录</li>
+                <li>极速分队神器</li>
+                <li>均衡分配玩家</li>
+                <li>适合发疯内战</li>
             </ul>
-            <button class="mode-btn">开始使用 →</button>
-        </div>
-
-        <!-- 娱乐模式 -->
-        <div class="mode-card" onclick="selectMode('fun')">
-            <div class="mode-icon">🎭</div>
-            <div class="mode-title">娱乐模式</div>
-            <div class="mode-description">
-                随机性和趣味性更强的模式，包含多种娱乐玩法和特殊规则。
-            </div>
-            <ul class="mode-features">
-                <li>随机英雄模式</li>
-                <li>神秘英雄挑战</li>
-                <li>特殊规则选项</li>
-                <li>趣味彩蛋功能</li>
-            </ul>
-            <button class="mode-btn">开始使用 →</button>
+            <button class="mode-btn">ENTER →</button>
         </div>
     </div>
 </div>
 
 <div class="footer">
-    瘸子🍆出品 · 包装私密 顺丰包邮🙂 |
-    <a href="javascript:void(0)" onclick="showAbout()">关于工具</a>
+    瘸子🍆出品 · 2025 小分队特别版 |
+    <a href="javascript:void(0)" onclick="alert('OW内战工具 v2.0\n赛博朋克特别版\n作者：瘸子Neon\n\n注入你的神经端口，开始游戏！')">SYSTEM INFO</a>
 </div>
 
 <script>
-    // 模式选择函数
     function selectMode(mode) {
-        // 显示加载提示
-        const btn = event.target.closest('.mode-card').querySelector('.mode-btn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '加载中...';
-        btn.disabled = true;
+        const card = event.currentTarget;
+        const btn = card.querySelector('.mode-btn');
+        const original = btn.textContent;
+        btn.innerHTML = '<span style="color:#ff00ff">LOADING...</span>';
 
-        // 模拟加载过程
         setTimeout(() => {
-            // 根据选择的模式跳转到对应的页面
             switch(mode) {
-                case 'standard':
-                    window.location.href = 'randomHero.html';
-                    break;
-                case 'quick':
-                    window.location.href = 'quick.html';
-                    break;
-                case 'competitive':
-                    window.location.href = 'competitive.html';
-                    break;
-                case 'fun':
-                    window.location.href = 'fun.html';
-                    break;
-                default:
-                    window.location.href = 'standard.html';
+                case 'randomTeamHero': location.href = 'randomHero.html'; break;
+                case 'fixedTeamHero': location.href = 'fixedTeamHero.html'; break;
+                case 'chaos': location.href = 'chaos.html'; break;
             }
-        }, 800);
+        }, 1000);
     }
-
-    // 关于工具信息
-    function showAbout() {
-        alert('OW内战工具\n\n版本: 2.0\n作者: 瘸子🍆\n\n功能: 公平分配守望先锋内战队伍，支持多种模式和自定义设置。\n\n祝您游戏愉快！');
-    }
-
-    // 添加卡片悬停效果
-    document.querySelectorAll('.mode-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px)';
-        });
-
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
 </script>
 </body>
 </html>
