@@ -2,571 +2,376 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>ow内战工具</title>
-    <link rel="stylesheet" href="css/style.css?v=1.3">
-    <link rel="icon"
-          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OW内战工具 - 模式选择</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
     <style>
-        /* Markdown 弹窗样式优化 - 修复版 */
-        .md-modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
         }
 
-        .md-modal-content {
-            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-            border-radius: 16px;
-            width: 85%;
-            height: 85%;
-            max-width: 900px;
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
-            border: 2px solid #ffcc00;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            padding: 30px;
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 204, 0, 0.2);
+            position: relative;
             overflow: hidden;
         }
 
-        .md-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 25px;
-            background: linear-gradient(90deg, #2a2a2a 0%, #333 100%);
-            border-bottom: 2px solid #ffcc00;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ffcc00, #ffaa00, #ff8800, #ffcc00);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
         }
 
-        .md-title {
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .header {
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+        }
+
+        h1 {
             color: #ffcc00;
-            font-weight: bold;
-            font-size: 20px;
+            font-size: 42px;
+            margin-bottom: 10px;
             text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            letter-spacing: 1px;
         }
 
-        .close-md {
-            background: #e75757;
-            border: none;
-            color: white;
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            cursor: pointer;
+        .subtitle {
             font-size: 18px;
+            color: #aaa;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+
+        .mode-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .mode-card {
+            background: linear-gradient(145deg, #252540, #1e1e38);
+            border-radius: 16px;
+            padding: 30px 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid rgba(255, 204, 0, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 204, 0, 0.6);
+        }
+
+        .mode-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ffcc00, #ffaa00);
+        }
+
+        .mode-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+
+        .mode-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #ffcc00;
+        }
+
+        .mode-description {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #ccc;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .mode-features {
+            text-align: left;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .mode-features li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .mode-features li::before {
+            content: "✓";
+            color: #4CAF50;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .mode-btn {
+            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
+            color: #000;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            margin-top: auto;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(231, 87, 87, 0.3);
-        }
-
-        .close-md:hover {
-            background: #ff4444;
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
-        }
-
-        .md-body {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-            color: #e0e0e0;
-            line-height: 1.6;
-            font-size: 15px;
-        }
-
-        /*!* Markdown 内容样式优化 - 修复重影和列表问题 *!*/
-        .md-body h1 {
-            color: #ffcc00;
-            font-size: 28px;
-            margin: 25px 0 15px 0;
-            padding-bottom: 12px;
-            border-bottom: 3px solid #ffcc00;
-            text-shadow: 0 0 8px rgba(255, 204, 0, 0.3);
-        }
-
-        .md-body h1:first-child {
-            margin-top: 0;
-        }
-
-        .md-body h2 {
-            color: #ffcc00;
-            font-size: 22px;
-            margin: 20px 0 12px 0;
-            padding-left: 15px;
-            border-left: 4px solid #ffcc00;
-            background: linear-gradient(90deg, rgba(255, 204, 0, 0.1) 0%, transparent 100%);
-            padding: 10px 15px;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .md-body h3 {
-            color: #ff9966;
-            font-size: 18px;
-            margin: 18px 0 10px 0;
-            padding: 8px 0;
-            border-bottom: 1px solid #444;
-        }
-
-        .md-body h4 {
-            color: #66ccff;
-            font-size: 16px;
-            margin: 15px 0 8px 0;
-        }
-
-        .md-body p {
-            margin: 12px 0;
-            text-align: justify;
-        }
-
-        .md-body strong {
-            color: #ffcc00;
-            font-weight: bold;
-        }
-
-        .md-body em {
-            color: #ff9966;
-            font-style: italic;
-        }
-
-        .md-body code {
-            background: rgba(255, 204, 0, 0.1);
-            color: #ff9966;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            border: 1px solid rgba(255, 204, 0, 0.3);
-            font-size: 14px;
-        }
-
-        .md-body pre {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 12px;
-            overflow-x: auto;
-            border-left: 5px solid #ffcc00;
-            margin: 15px 0;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .md-body pre code {
-            background: none;
-            border: none;
-            padding: 0;
-            color: #e0e0e0;
-        }
-
-        /* 修复列表样式 - 数字序号位置问题 */
-        .md-body ul, .md-body ol {
-            margin: 15px 0;
-            padding-left: 30px;
-        }
-
-        .md-body li {
-            margin: 8px 0;
-            padding: 4px 0;
-            position: relative;
-            text-align: left;
-        }
-
-        /* 无序列表样式 */
-        .md-body ul {
-            list-style: none;
-        }
-
-        .md-body ul li {
-            padding-left: 20px;
-        }
-
-        .md-body ul li:before {
-            content: "•";
-            color: #ffcc00;
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-            top: 2px;
-            font-size: 18px;
-        }
-
-        /* 有序列表样式 */
-        .md-body ol {
-        }
-
-        .md-body ol li {
-            padding-left: 30px;
-        }
-
-        .md-body ol li:before {
-            color: #ffcc00;
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-            top: 2px;
-            min-width: 25px;
-            text-align: right;
-        }
-
-        .md-body blockquote {
-            border-left: 4px solid #ffcc00;
-            padding: 15px 20px;
-            margin: 20px 0;
-            background: rgba(255, 204, 0, 0.05);
-            border-radius: 0 8px 8px 0;
-            font-style: italic;
-            color: #ccc;
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .md-body table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .md-body th {
-            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
-            color: #000;
-            padding: 12px 15px;
-            text-align: left;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .md-body td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #444;
-            color: #e0e0e0;
-        }
-
-        .md-body tr:nth-child(even) {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .md-body tr:hover {
-            background: rgba(255, 204, 0, 0.1);
-        }
-
-        .md-body hr {
-            border: none;
-            height: 2px;
-            background: linear-gradient(90deg, transparent 0%, #ffcc00 50%, transparent 100%);
-            margin: 25px 0;
-        }
-
-        .md-body a {
-            color: #66ccff;
-            text-decoration: none;
-            border-bottom: 1px dotted #66ccff;
-            transition: all 0.3s ease;
-        }
-
-        .md-body a:hover {
-            color: #ffcc00;
-            border-bottom: 1px solid #ffcc00;
-        }
-
-        /* 自定义滚动条 */
-        .md-body::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .md-body::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .md-body::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
-            border-radius: 4px;
-        }
-
-        .md-body::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
-        }
-
-        /* 查看文档按钮样式优化 */
-        #viewDocBtn {
-            position: fixed;
-            top: 25px;
-            right: 25px;
-            background: linear-gradient(135deg, #ffcc00 0%, #ffaa00 100%);
-            color: #000;
-            border: none;
-            border-radius: 25px;
-            padding: 12px 24px;
-            cursor: pointer;
-            font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 4px 20px rgba(255, 204, 0, 0.4);
-            transition: all 0.3s ease;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
             gap: 8px;
         }
 
-        #viewDocBtn:hover {
+        .mode-btn:hover {
             background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(255, 204, 0, 0.6);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 204, 0, 0.6);
         }
+
+        .footer {
+            margin-top: 40px;
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+        }
+
+        .footer a {
+            color: #ffcc00;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer a:hover {
+            color: #ffaa00;
+            text-decoration: underline;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            .mode-selection {
+                grid-template-columns: 1fr;
+            }
+
+            .mode-card {
+                padding: 20px;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mode-card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .mode-card:nth-child(1) { animation-delay: 0.1s; }
+        .mode-card:nth-child(2) { animation-delay: 0.2s; }
+        .mode-card:nth-child(3) { animation-delay: 0.3s; }
+        .mode-card:nth-child(4) { animation-delay: 0.4s; }
     </style>
 </head>
 <body>
+<div class="container">
+    <div class="header">
+        <div class="logo">🎮</div>
+        <h1>OW内战工具</h1>
+        <p class="subtitle">选择适合您团队需求的模式，开始公平有趣的守望先锋内战分配</p>
+    </div>
 
-<!-- 查看文档按钮 -->
-<button id="viewDocBtn">📖 使用说明</button>
-
-<!-- Markdown 弹窗 -->
-<div id="mdModal" class="md-modal">
-    <div class="md-modal-content">
-        <div class="md-header">
-            <div class="md-title">📚 OW内战工具 - 使用说明</div>
-            <button class="close-md" id="closeMd">×</button>
-        </div>
-        <div class="md-body" id="mdContent">
-            <div style="text-align: center; color: #ccc;">
-                <p>加载说明文档中...</p>
+    <div class="mode-selection">
+        <!-- 标准模式 -->
+        <div class="mode-card" onclick="selectMode('standard')">
+            <div class="mode-icon">⚔️</div>
+            <div class="mode-title">标准模式</div>
+            <div class="mode-description">
+                经典的队伍分配模式，平衡队伍实力，自动分配英雄，适合大多数内战场景。
             </div>
+            <ul class="mode-features">
+                <li>智能队伍平衡算法</li>
+                <li>自动英雄分配</li>
+                <li>支持自定义英雄池</li>
+                <li>玩家等级权重系统</li>
+            </ul>
+            <button class="mode-btn">开始使用 →</button>
         </div>
-    </div>
-</div>
 
-<h2>🎮 ow内战工具 </h2>
-
-<div class="feature-switches">
-    <span style="cursor:pointer; margin-right: 20px;">
-        <input type="checkbox" style="width: 20px" id="allowRepeat" checked>
-        允许两队重复英雄
-    </span>
-
-    <span style="cursor:pointer; margin-right: 20px;">
-        <input type="checkbox" style="width: 20px" id="randomHero" checked>
-        自动分配英雄
-    </span>
-</div>
-
-<div class="hero-pool-management">
-    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
-        <input id="heroInput" class="player-input" placeholder="添加英雄，如: T-莱因哈特">
-        <button id="addHeroBtn" class="small-btn">添加英雄</button>
-        <button id="resetHeroPoolBtn" class="small-btn">重置英雄池</button>
-    </div>
-    <div class="hero-pool-display" id="heroPoolDisplay">
-        <!-- 英雄池 -->
-    </div>
-</div>
-
-<div class="player-management">
-    <div class="mode-selector">
-        <div style="color: #ffcc00;font-weight: bold;text-shadow: 0 0 10px #ffaa00;">👥玩家列表</div>
-    </div>
-
-    <div id="customMode" class="player-mode">
-        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
-            <input id="playerNameInput" class="player-input" placeholder="玩家名称">
-            <select id="playerLevelInput">
-                <option value="4">⭐⭐⭐⭐</option>
-                <option value="3">⭐⭐⭐</option>
-                <option value="2">⭐⭐</option>
-                <option value="1">⭐</option>
-            </select>
-            <select id="playerRoleInput">
-                <option value="any">任意位置</option>
-                <option value="T">🛡️坦克</option>
-                <option value="C">⚔️输出</option>
-                <option value="N">🩹支援</option>
-            </select>
-            <button id="addPlayerBtn" class="small-btn">添加玩家</button>
-        </div>
-    </div>
-
-    <!-- 快速添加 -->
-    <div id="selectMode" class="player-mode">
-        <div class="player-selector" id="playerSelector">
-            <!-- 玩家选项 -->
-        </div>
-    </div>
-    <div style="position: relative;background: #302f2f;width: 98%;margin:5px auto;padding:0 5px;border-radius: 10px;height: 130px;overflow-y: scroll">
-        <div style="color: #ffcc00;font-weight: bold;text-shadow: 0 0 10px #ffaa00;position: sticky;top: 0;background: #302f2f;display: flex;align-items: center;justify-content: space-between;padding: 5px 0;">
-            <div style="flex: 1;text-align: center;">
-                👩‍🚀已选中玩家
+        <!-- 快速模式 -->
+        <div class="mode-card" onclick="selectMode('quick')">
+            <div class="mode-icon">🚀</div>
+            <div class="mode-title">快速模式</div>
+            <div class="mode-description">
+                简化版分配工具，快速生成队伍，适合时间紧迫或休闲对战。
             </div>
-            <button id="clearPlayersBtn" class="small-btn" style="background: #e75757;margin: 0;">
-                清空列表
-            </button>
-        </div>
-        <div class="player-list" id="playerList">
-            <!-- 玩家列表 -->
-        </div>
-    </div>
-</div>
-<div style="display: flex; justify-content: center; margin-top: 10px;">
-    <button id="startBtn" style="margin-bottom: 20px">🎲 开始分配</button>
-</div>
-
-<!-- 内幕设置弹窗 -->
-<div id="rivalModal" class="rival-modal">
-    <div class="rival-modal-content">
-        <h3 style="color: #ffcc00; margin-bottom: 20px;">😜 内幕彩蛋</h3>
-
-        <!-- 宿敌设置 -->
-        <div class="rival-section">
-            <h4>敌对群友</h4>
-            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; align-items: center;">
-                <select id="rivalPlayer1" style="flex: 1;">
-                    <option value="">选择玩家1</option>
-                </select>
-                <span style="color: #ff3366; font-weight: bold;">VS</span>
-                <select id="rivalPlayer2" style="flex: 1;">
-                    <option value="">选择玩家2</option>
-                </select>
-                <button id="addRivalBtn" class="small-btn">确认</button>
-            </div>
-            <div id="rivalList" class="rival-list">
-                <!-- 宿敌列表 -->
-            </div>
+            <ul class="mode-features">
+                <li>极速队伍生成</li>
+                <li>简化操作界面</li>
+                <li>预设英雄池</li>
+                <li>一键分配功能</li>
+            </ul>
+            <button class="mode-btn">开始使用 →</button>
         </div>
 
-        <!-- 英雄绑定设置 -->
-        <div class="rival-section">
-            <h4>专属英雄</h4>
-            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; align-items: center;">
-                <select id="bindPlayer" style="flex: 1;">
-                    <option value="">选择玩家</option>
-                </select>
-                <select id="bindHero" style="flex: 1;">
-                    <option value="">选择英雄</option>
-                </select>
-                <button id="addBindBtn" class="small-btn">确认</button>
+        <!-- 竞技模式 -->
+        <div class="mode-card" onclick="selectMode('competitive')">
+            <div class="mode-icon">🏆</div>
+            <div class="mode-title">竞技模式</div>
+            <div class="mode-description">
+                高级分配选项，支持更多自定义设置，适合高水平玩家和正式比赛。
             </div>
-            <div id="bindList" class="bind-list">
-                <!-- 绑定列表 -->
-            </div>
+            <ul class="mode-features">
+                <li>高级平衡算法</li>
+                <li>角色限制设置</li>
+                <li>地图特定英雄池</li>
+                <li>比赛历史记录</li>
+            </ul>
+            <button class="mode-btn">开始使用 →</button>
         </div>
 
-        <div class="rival-controls">
-            <button id="closeRivalModal" class="small-btn">关闭</button>
-            <button id="clearRivalsBtn" class="small-btn" style="background: #e75757">清空所有设置</button>
+        <!-- 娱乐模式 -->
+        <div class="mode-card" onclick="selectMode('fun')">
+            <div class="mode-icon">🎭</div>
+            <div class="mode-title">娱乐模式</div>
+            <div class="mode-description">
+                随机性和趣味性更强的模式，包含多种娱乐玩法和特殊规则。
+            </div>
+            <ul class="mode-features">
+                <li>随机英雄模式</li>
+                <li>神秘英雄挑战</li>
+                <li>特殊规则选项</li>
+                <li>趣味彩蛋功能</li>
+            </ul>
+            <button class="mode-btn">开始使用 →</button>
         </div>
     </div>
 </div>
 
-<!-- 结果弹窗 -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <div id="rollText" class="hero-roll">分配中...</div>
-        <div id="finalResult" style="display:none;">
-        </div>
-        <div class="modal-footer">瘸子🍆出品 · 包装私密 顺丰包邮🙂</div>
-    </div>
+<div class="footer">
+    瘸子🍆出品 · 包装私密 顺丰包邮🙂 |
+    <a href="javascript:void(0)" onclick="showAbout()">关于工具</a>
 </div>
 
-<!-- 底部信息 -->
-<div class="footer" id="footer">
-    瘸子🍆出品 · 包装私密 顺丰包邮🙂
-</div>
-
-<script src="js/config.js?v=1.0"></script>
-<script src="js/script.js?v=1.3"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-    // Markdown 弹窗控制
-    const mdModal = document.getElementById('mdModal');
-    const viewDocBtn = document.getElementById('viewDocBtn');
-    const closeMd = document.getElementById('closeMd');
-    const mdContent = document.getElementById('mdContent');
+    // 模式选择函数
+    function selectMode(mode) {
+        // 显示加载提示
+        const btn = event.target.closest('.mode-card').querySelector('.mode-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '加载中...';
+        btn.disabled = true;
 
-    // 打开弹窗并加载 Markdown
-    viewDocBtn.addEventListener('click', function () {
-        loadMarkdownFile();
-        mdModal.style.display = 'flex';
-    });
-
-    // 关闭弹窗
-    closeMd.addEventListener('click', function () {
-        mdModal.style.display = 'none';
-    });
-
-    // 点击背景关闭
-    mdModal.addEventListener('click', function (e) {
-        if (e.target === mdModal) {
-            mdModal.style.display = 'none';
-        }
-    });
-
-    // ESC键关闭
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && mdModal.style.display === 'flex') {
-            mdModal.style.display = 'none';
-        }
-    });
-
-    // 加载 Markdown 文件
-    function loadMarkdownFile() {
-        mdContent.innerHTML = '<div style="text-align: center; color: #ccc;"><p>加载说明文档中...</p></div>';
-
-        const mdFiles = [
-            'README.md',
-            'readme.md',
-            'documentation.md',
-            'docs/README.md',
-            'docs/readme.md',
-            '使用说明.md',
-            '说明文档.md'
-        ];
-
-        let currentFileIndex = 0;
-
-        function tryLoadNextFile() {
-            if (currentFileIndex >= mdFiles.length) {
-                mdContent.innerHTML = `
-                <div style="text-align: center; color: #ff6666;">
-                    <h3>❌ 未找到说明文档</h3>
-                    <p>请在项目根目录下创建 README.md 文件</p>
-                    <p>或者将说明文档命名为：README.md、readme.md、documentation.md</p>
-                </div>
-            `;
-                return;
+        // 模拟加载过程
+        setTimeout(() => {
+            // 根据选择的模式跳转到对应的页面
+            switch(mode) {
+                case 'standard':
+                    window.location.href = 'randomHero.html';
+                    break;
+                case 'quick':
+                    window.location.href = 'quick.html';
+                    break;
+                case 'competitive':
+                    window.location.href = 'competitive.html';
+                    break;
+                case 'fun':
+                    window.location.href = 'fun.html';
+                    break;
+                default:
+                    window.location.href = 'standard.html';
             }
-
-            const filePath = mdFiles[currentFileIndex];
-            fetch(filePath)
-                .then(response => {
-                    if (!response.ok) throw new Error('文件不存在');
-                    return response.text();
-                })
-                .then(markdown => {
-                    // 使用 marked.js 渲染 Markdown
-                    mdContent.innerHTML = marked.parse(markdown, {
-                        headerIds: false, // 不自动生成 id
-                        mangle: false     // 禁用电子邮件自动转义
-                    });
-                })
-                .catch(() => {
-                    currentFileIndex++;
-                    tryLoadNextFile();
-                });
-        }
-
-        tryLoadNextFile();
+        }, 800);
     }
 
+    // 关于工具信息
+    function showAbout() {
+        alert('OW内战工具\n\n版本: 2.0\n作者: 瘸子🍆\n\n功能: 公平分配守望先锋内战队伍，支持多种模式和自定义设置。\n\n祝您游戏愉快！');
+    }
+
+    // 添加卡片悬停效果
+    document.querySelectorAll('.mode-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
 </script>
 </body>
 </html>
