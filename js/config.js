@@ -1,10 +1,3 @@
-window.DEFAULT_HERO_POOL = [
-    'N-无漾', 'N-安娜', 'N-巴蒂斯特', 'N-布丽吉塔', 'N-禅雅塔', 'N-卢西奥', 'N-生命之梭', 'N-天使', 'N-雾子', 'N-伊拉锐', 'N-朱诺',
-    'C-弗蕾娅', 'C-艾什', 'C-半藏', 'C-堡垒', 'C-法老之鹰', 'C-黑百合', 'C-黑影', 'C-回声', 'C-卡西迪', 'C-狂鼠', 'C-猎空', 'C-美', 'C-莫伊拉', 'C-士兵76', 'C-死神',
-    'C-索杰恩', 'C-探奇', 'C-托比昂', 'C-源氏', 'C-秩序之光',
-    'T-奥丽莎', 'T-查莉娅', 'T-D.VA', 'T-骇灾', 'T-拉玛刹', 'T-莱因哈特', 'T-路霸', 'T-毛加', 'T-末日铁拳', 'T-破坏球', 'T-温斯顿', 'T-西格玛', 'T-渣客女王'
-];
-
 window.PRESET_PLAYERS = [
     {name: ' 傲娇 ', level: 2, preferredRole: 'any'},
     {name: ' 拔刀能留住落樱么 ', level: 1, preferredRole: 'any'},
@@ -21,7 +14,6 @@ window.PRESET_PLAYERS = [
     {name: 'hao', level: 1, preferredRole: 'any'},
     {name: ' 豪门将进酒 ', level: 1, preferredRole: 'any'},
     {name: ' 吼爹 ', level: 3, preferredRole: 'any'},
-    {name: ' 花落微凉萝清幽 ', level: 2, preferredRole: 'any'},
     {name: ' 叫我泽村就行啦 ', level: 4, preferredRole: 'any'},
     {name: 'kokumeow', level: 1, preferredRole: 'any'},
     {name: ' 口水哩啦子 ', level: 4, preferredRole: 'any'},
@@ -36,6 +28,8 @@ window.PRESET_PLAYERS = [
     {name: ' 慢树 ', level: 1, preferredRole: 'any'},
     {name: ' 马丘比丘的小羊 ', level: 1, preferredRole: 'any'},
     {name: ' 没有名字的怪物 ', level: 4, preferredRole: 'any'},
+    {name: ' 星野哲 ', level: 2, preferredRole: 'any'},
+    {name: ' 章鱼 ', level: 2, preferredRole: 'any'},
     {name: ' 弥冬菌 ', level: 1, preferredRole: 'any'},
     {name: ' 迷迷 ', level: 2, preferredRole: 'any'},
     {name: ' 明天还会再见吗 ', level: 1, preferredRole: 'any'},
@@ -45,6 +39,7 @@ window.PRESET_PLAYERS = [
     {name: 'ONENONLY', level: 1, preferredRole: 'any'},
     {name: ' 帕帕尔 ', level: 2, preferredRole: 'any'},
     {name: 'PeanutFan', level: 3, preferredRole: 'any'},
+    {name: '喵喵大魔王', level: 2, preferredRole: 'any'},
     {name: ' 培根芝士牛肉蛋堡 ', level: 2, preferredRole: 'any'},
     {name: ' 婆娑月 ', level: 4, preferredRole: 'any'},
     {name: ' 齐格勒医生 ', level: 2, preferredRole: 'any'},
@@ -54,6 +49,7 @@ window.PRESET_PLAYERS = [
     {name: ' 手撕包饭 ', level: 1, preferredRole: 'any'},
     {name: ' 四月绽放桜花雨 ', level: 3, preferredRole: 'any'},
     {name: ' 孙妈妈 ', level: 4, preferredRole: 'any'},
+    {name: 'ELMTREEYMY', level: 3, preferredRole: 'any'},
     {name: 'SuperLu', level: 3, preferredRole: 'any'},
     {name: 'SuperSix', level: 1, preferredRole: 'any'},
     {name: ' 他说逗逗就好了 ', level: 2, preferredRole: 'any'},
@@ -73,4 +69,22 @@ window.PRESET_PLAYERS = [
     {name: ' 在爱就不礼貌了 ', level: 4, preferredRole: 'any'},
     {name: ' 崽崽 ', level: 2, preferredRole: 'any'},
     {name: ' 小阳 ', level: 4, preferredRole: 'any'},
+    {name: ' 怡曦酱 ', level: 2, preferredRole: 'any'},
+    {name: ' ohman ', level: 2, preferredRole: 'any'},
+    {name: ' 花落微涼夢清幽 ', level: 2, preferredRole: 'any'},
+    {name: ' 可以亲亲猫猫头吗 ', level: 1, preferredRole: 'any'},
+    {name: ' 伤心猫猫 ', level: 1, preferredRole: 'any'},
+    {name: ' Meditatg ', level: 1, preferredRole: 'any'},
+    {name: ' Yuki ', level: 1, preferredRole: 'any'},
+    {name: ' 在逃胖熊猫 ', level: 1, preferredRole: 'any'},
+    {name: ' TAEYEON ', level: 1, preferredRole: 'any'},
+    {name: ' 如果当时 ', level: 1, preferredRole: 'any'},
+    {name: ' 奶酪哥 ', level: 4, preferredRole: 'any'},
+    {name: ' 奶酪姐 ', level: 1, preferredRole: 'any'},
+];
+window.DEFAULT_HERO_POOL = [
+    'N-无漾', 'N-安娜', 'N-巴蒂斯特', 'N-布丽吉塔', 'N-禅雅塔', 'N-卢西奥', 'N-生命之梭', 'N-天使', 'N-雾子', 'N-伊拉锐', 'N-朱诺',
+    'C-弗蕾娅', 'C-艾什', 'C-半藏', 'C-堡垒', 'C-法老之鹰', 'C-黑百合', 'C-黑影', 'C-回声', 'C-卡西迪', 'C-狂鼠', 'C-猎空', 'C-美', 'C-莫伊拉', 'C-士兵76', 'C-死神',
+    'C-索杰恩', 'C-探奇', 'C-托比昂', 'C-源氏', 'C-秩序之光',
+    'T-奥丽莎', 'T-查莉娅', 'T-D.VA', 'T-骇灾', 'T-拉玛刹', 'T-莱因哈特', 'T-路霸', 'T-毛加', 'T-末日铁拳', 'T-破坏球', 'T-温斯顿', 'T-西格玛', 'T-渣客女王'
 ];
