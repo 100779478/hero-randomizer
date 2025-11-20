@@ -4,11 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OW内战工具 - 赛博模式选择</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>Neon</text></svg>">
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>Neon</text></svg>">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
 
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background: #0d0b1a;
             color: #e0faff;
@@ -26,26 +32,47 @@
         body::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background:
-                    linear-gradient(90deg, rgba(138, 43, 226, 0.05) 1px, transparent 1px),
-                    linear-gradient(rgba(138, 43, 226, 0.05) 1px, transparent 1px);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, rgba(138, 43, 226, 0.05) 1px, transparent 1px),
+            linear-gradient(rgba(138, 43, 226, 0.05) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
             animation: gridMove 20s linear infinite;
         }
-        @keyframes gridMove { 0%{transform:translate(0,0)} 100%{transform:translate(40px,40px)} }
+
+        @keyframes gridMove {
+            0% {
+                transform: translate(0, 0)
+            }
+            100% {
+                transform: translate(40px, 40px)
+            }
+        }
 
         /* 扫描线效果 */
         body::after {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.03) 2px, rgba(0, 255, 255, 0.03) 4px);
             pointer-events: none;
             animation: scan 8s linear infinite;
         }
-        @keyframes scan { 0%{transform:translateY(-100%)} 100%{transform:translateY(100%)} }
+
+        @keyframes scan {
+            0% {
+                transform: translateY(-100%)
+            }
+            100% {
+                transform: translateY(100%)
+            }
+        }
 
         .container {
             max-width: 1400px;
@@ -54,9 +81,8 @@
             padding: 40px 25px;
             background: rgba(10, 8, 30, 0.85);
             border-radius: 20px;
-            box-shadow:
-                    0 0 30px rgba(138, 43, 226, 0.6),
-                    inset 0 0 60px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.6),
+            inset 0 0 60px rgba(0, 255, 255, 0.1);
             border: 1px solid #8a2be2;
             position: relative;
             z-index: 1;
@@ -66,12 +92,23 @@
         .container::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; height: 4px;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
             background: linear-gradient(90deg, #8a2be2, #00ffff, #ff00ff, #8a2be2);
             background-size: 300% 100%;
             animation: neonFlow 4s infinite linear;
         }
-        @keyframes neonFlow { 0%,100%{background-position:0%} 50%{background-position:100%} }
+
+        @keyframes neonFlow {
+            0%, 100% {
+                background-position: 0%
+            }
+            50% {
+                background-position: 100%
+            }
+        }
 
         .header {
             margin-bottom: 50px;
@@ -81,17 +118,24 @@
         .logo {
             font-size: 80px;
             margin-bottom: 10px;
-            text-shadow:
-                    0 0 20px #8a2be2,
-                    0 0 40px #00ffff;
+            text-shadow: 0 0 20px #8a2be2,
+            0 0 40px #00ffff;
             animation: glitch 3s infinite;
         }
 
         @keyframes glitch {
-            0%,100% { text-shadow: 0 0 20px #8a2be2, 0 0 40px #00ffff; }
-            14% { text-shadow: -5px 0 #ff00ff, 5px 0 #00ffff; }
-            15% { text-shadow: 5px 0 #ff00ff, -5px 0 #00ffff; }
-            16% { text-shadow: 0 0 20px #8a2be2, 0 0 40px #00ffff; }
+            0%, 100% {
+                text-shadow: 0 0 20px #8a2be2, 0 0 40px #00ffff;
+            }
+            14% {
+                text-shadow: -5px 0 #ff00ff, 5px 0 #00ffff;
+            }
+            15% {
+                text-shadow: 5px 0 #ff00ff, -5px 0 #00ffff;
+            }
+            16% {
+                text-shadow: 0 0 20px #8a2be2, 0 0 40px #00ffff;
+            }
         }
 
         h1 {
@@ -120,7 +164,7 @@
         }
 
         .mode-card {
-            background: linear-gradient(135deg, rgba(20,10,60,0.8), rgba(10,5,40,0.9));
+            background: linear-gradient(135deg, rgba(20, 10, 60, 0.8), rgba(10, 5, 40, 0.9));
             border-radius: 16px;
             padding: 35px 25px;
             text-align: center;
@@ -129,14 +173,17 @@
             position: relative;
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
 
         .mode-card::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(45deg, transparent 30%, rgba(138,43,226,0.15) 50%, transparent 70%);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(138, 43, 226, 0.15) 50%, transparent 70%);
             transform: translateX(-100%);
             transition: transform 0.6s;
         }
@@ -148,9 +195,8 @@
         .mode-card:hover {
             transform: translateY(-15px) scale(1.03);
             border: 1px solid #8a2be2;
-            box-shadow:
-                    0 0 40px rgba(138, 43, 226, 0.8),
-                    0 0 80px rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 40px rgba(138, 43, 226, 0.8),
+            0 0 80px rgba(0, 255, 255, 0.4);
         }
 
         .mode-icon {
@@ -176,7 +222,7 @@
         }
 
         .mode-features {
-            text-align: center !important;   /* 重点：居中 */
+            text-align: center !important; /* 重点：居中 */
             width: 100%;
             margin: 20px 0;
             padding: 0 20px;
@@ -200,8 +246,12 @@
         }
 
         @keyframes blink {
-            0%,100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
         }
 
         .mode-btn {
@@ -219,15 +269,17 @@
             overflow: hidden;
             transition: all 0.4s;
             text-shadow: 0 0 10px #00ffff;
-            box-shadow: 0 0 20px rgba(0,255,255,0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
         }
 
         .mode-btn::before {
             content: '';
             position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0,255,255,0.3), transparent);
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
             transition: left 0.6s;
         }
 
@@ -273,13 +325,28 @@
         }
 
         @media (max-width: 1200px) {
-            .mode-selection { grid-template-columns: repeat(2, 1fr); gap: 25px; }
+            .mode-selection {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 25px;
+            }
         }
+
         @media (max-width: 768px) {
-            .mode-selection { grid-template-columns: 1fr; }
-            h1 { font-size: 36px; }
-            .logo { font-size: 60px; }
-            .container { padding: 30px 20px; }
+            .mode-selection {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            .logo {
+                font-size: 60px;
+            }
+
+            .container {
+                padding: 30px 20px;
+            }
         }
     </style>
 </head>
@@ -295,36 +362,36 @@
     <div class="mode-selection">
         <div class="mode-card" onclick="selectMode('randomTeamHero')">
             <div class="mode-icon">全随机模式</div>
-            <div class="mode-description">玩家随机分组 · 英雄随机分配 · 绝对公平</div>
+            <div class="mode-description">玩家随机分组 · 英雄随机分配</div>
             <ul class="mode-features">
-                <li>完全随机分组</li>
+                <li>人员随机分组</li>
                 <li>英雄随机分配</li>
                 <li>实力自动平衡</li>
-                <li>适合全新阵容</li>
+                <li>内幕敌对·内幕英雄</li>
             </ul>
             <button class="mode-btn">ENTER →</button>
         </div>
 
         <div class="mode-card" onclick="selectMode('fixedTeamHero')">
-            <div class="mode-icon">固定队伍</div>
-            <div class="mode-description">队伍不变 · 仅随机英雄 · 适合固定队友</div>
+            <div class="mode-icon">自选模式</div>
+            <div class="mode-description">队伍自选 · 仅随机英雄</div>
             <ul class="mode-features">
-                <li>保留原有队伍</li>
-                <li>英雄随机分配</li>
                 <li>支持自定义玩家</li>
-                <li>适合开黑车队</li>
+                <li>英雄随机分配</li>
+                <li>保留原有队伍</li>
+                <li>无内幕纯绿色</li>
             </ul>
             <button class="mode-btn">ENTER →</button>
         </div>
 
         <div class="mode-card" onclick="selectMode('chaos')">
-            <div class="mode-icon">大乱炖分队</div>
-            <div class="mode-description">无规则 · 无限制 · 纯粹的混乱与快乐</div>
+            <div class="mode-icon">大乱炖模式</div>
+            <div class="mode-description">多人运动 · 自动多组分配</div>
             <ul class="mode-features">
-                <li>极速分队神器</li>
-                <li>均衡分配玩家</li>
-                <li>适合发疯内战</li>
-                <li>嘀嘀嗒嘀嗒</li>
+                <li>多人运动神器</li>
+                <li>均衡队伍实力</li>
+                <li>闲人落位观众</li>
+                <li>适合大乱炖</li>
             </ul>
             <button class="mode-btn">ENTER →</button>
         </div>
@@ -333,7 +400,8 @@
 
 <div class="footer">
     瘸子🍆出品 · 2025 小分队特别版 |
-    <a href="javascript:void(0)" onclick="alert('OW内战工具 v2.0\n赛博朋克特别版\n作者：瘸子Neon\n\n注入你的神经端口，开始游戏！')">SYSTEM INFO</a>
+    <a href="javascript:void(0)"
+       onclick="alert('OW内战工具 v2.0\n赛博朋克特别版\n作者：瘸子Neon\n\n注入你的神经端口，开始游戏！')">SYSTEM INFO</a>
 </div>
 
 <script>
@@ -344,10 +412,16 @@
         btn.innerHTML = '<span style="color:#ff00ff">LOADING...</span>';
 
         setTimeout(() => {
-            switch(mode) {
-                case 'randomTeamHero': location.href = 'randomHero.html'; break;
-                case 'fixedTeamHero': location.href = 'fixedTeamHero.html'; break;
-                case 'chaos': location.href = 'chaos.html'; break;
+            switch (mode) {
+                case 'randomTeamHero':
+                    location.href = 'randomHero.html';
+                    break;
+                case 'fixedTeamHero':
+                    location.href = 'fixedTeamHero.html';
+                    break;
+                case 'chaos':
+                    location.href = 'chaos.html';
+                    break;
             }
         }, 1000);
     }

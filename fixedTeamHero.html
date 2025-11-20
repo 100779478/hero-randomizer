@@ -311,7 +311,7 @@
             background: rgba(255, 255, 255, 0.06);
             border-left: 4px solid;
             margin: 5px 0;
-            padding: 10px 12px;
+            padding: 8px 12px;
             border-radius: 6px;
             display: flex;
             justify-content: space-between;
@@ -331,8 +331,8 @@
             background: linear-gradient(135deg, #ff3366, #ff6699);
             color: #fff;
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             cursor: pointer;
             font-weight: bold;
@@ -410,13 +410,12 @@
             color: #ffcc00;
             text-align: center;
             padding: 15px 0;
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             border-top: 3px solid #ff3366;
             text-shadow: 0 0 12px rgba(255, 51, 0.6);
             z-index: 1000;
             backdrop-filter: blur(12px);
-            cursor: pointer;
         }
 
         .result-table {
@@ -498,9 +497,9 @@
     <div class="row">
         <div class="col">
             <div class="card">
-                <div class="card-title">玩家列表（支持搜索）</div>
+                <div class="card-title">玩家列表</div>
                 <div class="input-row">
-                    <input id="playerNameInput" class="player-input" placeholder="输入名字添加新玩家">
+                    <input id="playerNameInput" class="player-input" placeholder="输入名字`搜索`或`添加`玩家">
                     <select id="playerLevel" class="player-input">
                         <option value="1">⭐</option>
                         <option value="2">⭐⭐</option>
@@ -702,10 +701,10 @@
         document.getElementById('finalResult').innerHTML = `
         <h3 style="text-align:center;color:#ffcc00;margin:18px 0;">${size}v${size} 最终结果</h3>
         <table class="result-table">
-            <thead><tr><th>队伍</th><th>玩家</th><th>英雄</th><th>位置</th></tr></thead>
+            <thead><tr><th>队伍</th><th>玩家</th><th>英雄</th></tr></thead>
             <tbody>
-                ${resultA.map(p => `<tr class="team-a-row"><td style="color:#ff3366;font-weight:bold;">A队</td><td>${p.name}</td><td>${p.hero}</td><td><span class="role-tag role-${p.role}">${p.role === 'T' ? '坦克' : p.role === 'N' ? '治疗' : '输出'}</span></td></tr>`).join('')}
-                ${resultB.map(p => `<tr class="team-b-row"><td style="color:#3366ff;font-weight:bold;">B队</td><td>${p.name}</td><td>${p.hero}</td><td><span class="role-tag role-${p.role}">${p.role === 'T' ? '坦克' : p.role === 'N' ? '治疗' : '输出'}</span></td></tr>`).join('')}
+                ${resultA.map(p => `<tr class="team-a-row"><td style="color:#ff3366;font-weight:bold;">A队</td><td>${p.name}</td><td>${p.hero}</td></tr>`).join('')}
+                ${resultB.map(p => `<tr class="team-b-row"><td style="color:#3366ff;font-weight:bold;">B队</td><td>${p.name}</td><td>${p.hero}</td></tr>`).join('')}
             </tbody>
         </table>`;
     }
