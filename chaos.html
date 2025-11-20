@@ -488,6 +488,7 @@
     }
 
     function toggle(name) {
+        document.getElementById('searchInput').value = ""
         selected.has(name) ? selected.delete(name) : selected.add(name);
         renderAll();
     }

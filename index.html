@@ -2,10 +2,13 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 关键：防跳动 + 禁止缩放 + 完美适配手机 -->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>OW内战工具 - 赛博模式选择</title>
     <link rel="icon"
           href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
 
@@ -15,32 +18,42 @@
             box-sizing: border-box;
         }
 
+        /* 终极核心：允许滚动 + 彻底隐藏滚动条 + 防地址栏跳动 */
+        html, body {
+            height: 100dvh; /* 动态视口高度，神级防跳 */
+            margin: 0;
+            overflow-y: auto; /* 允许垂直滚动 */
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch; /* iOS 丝滑 */
+            scrollbar-width: none; /* Firefox 隐藏滚动条 */
+            -ms-overflow-style: none; /* IE/Edge 隐藏滚动条 */
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Chrome/Safari 隐藏滚动条 */
+
         body {
             background: #0d0b1a;
             color: #e0faff;
-            min-height: 100vh;
             font-family: 'Orbitron', 'Microsoft YaHei', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
             position: relative;
+            padding: 20px 0;
         }
 
-        /* 赛博网格背景 */
+        /* 赛博网格背景（固定不随内容滚动） */
         body::before {
             content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: fixed;
+            inset: 0;
             background: linear-gradient(90deg, rgba(138, 43, 226, 0.05) 1px, transparent 1px),
             linear-gradient(rgba(138, 43, 226, 0.05) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
-            animation: gridMove 20s linear infinite;
+            animation: gridMove 30s linear infinite;
+            z-index: -2;
         }
 
         @keyframes gridMove {
@@ -52,17 +65,15 @@
             }
         }
 
-        /* 扫描线效果 */
+        /* 扫描线特效 */
         body::after {
             content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: fixed;
+            inset: 0;
             background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.03) 2px, rgba(0, 255, 255, 0.03) 4px);
             pointer-events: none;
-            animation: scan 8s linear infinite;
+            animation: scan 10s linear infinite;
+            z-index: -1;
         }
 
         @keyframes scan {
@@ -77,6 +88,7 @@
         .container {
             max-width: 1400px;
             width: 100%;
+            margin: 0 auto;
             text-align: center;
             padding: 40px 25px;
             background: rgba(10, 8, 30, 0.85);
@@ -118,8 +130,7 @@
         .logo {
             font-size: 80px;
             margin-bottom: 10px;
-            text-shadow: 0 0 20px #8a2be2,
-            0 0 40px #00ffff;
+            text-shadow: 0 0 20px #8a2be2, 0 0 40px #00ffff;
             animation: glitch 3s infinite;
         }
 
@@ -179,10 +190,7 @@
         .mode-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background: linear-gradient(45deg, transparent 30%, rgba(138, 43, 226, 0.15) 50%, transparent 70%);
             transform: translateX(-100%);
             transition: transform 0.6s;
@@ -195,8 +203,7 @@
         .mode-card:hover {
             transform: translateY(-15px) scale(1.03);
             border: 1px solid #8a2be2;
-            box-shadow: 0 0 40px rgba(138, 43, 226, 0.8),
-            0 0 80px rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 40px rgba(138, 43, 226, 0.8), 0 0 80px rgba(0, 255, 255, 0.4);
         }
 
         .mode-icon {
@@ -222,7 +229,7 @@
         }
 
         .mode-features {
-            text-align: center !important; /* 重点：居中 */
+            text-align: center;
             width: 100%;
             margin: 20px 0;
             padding: 0 20px;
@@ -230,27 +237,27 @@
 
         .mode-features li {
             margin: 12px 0;
-            padding-left: 0 !important;
             font-size: 14px;
             color: #ff00ff;
             text-shadow: 0 0 10px #ff00ff;
             position: relative;
+            padding-left: 10px;
         }
 
         .mode-features li::before {
             content: ">";
             color: #00ffff;
             position: absolute;
-            left: -20px;
+            left: -15px;
             animation: blink 1.5s infinite;
         }
 
         @keyframes blink {
             0%, 100% {
-                opacity: 1;
+                opacity: 1
             }
             50% {
-                opacity: 0.3;
+                opacity: 0.3
             }
         }
 
@@ -298,6 +305,8 @@
             margin-top: 60px;
             color: #8a2be2;
             font-size: 14px;
+            margin-left: 50%;
+            transform: translateX(-50%);
             text-shadow: 0 0 10px #8a2be2;
             letter-spacing: 1px;
         }
@@ -324,6 +333,7 @@
             width: 100%;
         }
 
+        /* 响应式 */
         @media (max-width: 1200px) {
             .mode-selection {
                 grid-template-columns: repeat(2, 1fr);
@@ -369,7 +379,7 @@
                 <li>实力自动平衡</li>
                 <li>内幕敌对·内幕英雄</li>
             </ul>
-            <button class="mode-btn">ENTER →</button>
+            <button class="mode-btn">ENTER</button>
         </div>
 
         <div class="mode-card" onclick="selectMode('fixedTeamHero')">
@@ -381,7 +391,7 @@
                 <li>保留原有队伍</li>
                 <li>无内幕纯绿色</li>
             </ul>
-            <button class="mode-btn">ENTER →</button>
+            <button class="mode-btn">ENTER</button>
         </div>
 
         <div class="mode-card" onclick="selectMode('chaos')">
@@ -393,22 +403,22 @@
                 <li>闲人落位观众</li>
                 <li>适合大乱炖</li>
             </ul>
-            <button class="mode-btn">ENTER →</button>
+            <button class="mode-btn">ENTER</button>
         </div>
     </div>
 </div>
 
 <div class="footer">
-    瘸子🍆出品 · 2025 小分队特别版 |
+    瘸子Neon出品 · 2025 小分队终极版 |
     <a href="javascript:void(0)"
-       onclick="alert('OW内战工具 v2.0\n赛博朋克特别版\n作者：瘸子Neon\n\n注入你的神经端口，开始游戏！')">SYSTEM INFO</a>
+       onclick="alert('OW内战工具 v3.0\n赛博朋克·神经植入版\n作者：瘸子Neon\n\n已接入矩阵，欢迎来到真实世界')">SYSTEM
+        INFO</a>
 </div>
 
 <script>
     function selectMode(mode) {
         const card = event.currentTarget;
         const btn = card.querySelector('.mode-btn');
-        const original = btn.textContent;
         btn.innerHTML = '<span style="color:#ff00ff">LOADING...</span>';
 
         setTimeout(() => {

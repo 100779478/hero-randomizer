@@ -555,8 +555,6 @@
 
 <script src="js/config.js"></script>
 <script>
-    // ==================== 下面是完整的正确代码，直接替换原来的 script 即可 ====================
-
     const DEFAULT_HERO_POOL = window.DEFAULT_HERO_POOL || []
 
     const PRESET_PLAYERS = window.PRESET_PLAYERS || [];
@@ -674,8 +672,10 @@
 
         const roll = setInterval(() => {
             const h = heroPool[Math.floor(Math.random() * heroPool.length)];
+            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            document.getElementById('rollText').style.color = randomColor;
             document.getElementById('rollText').textContent = h ? h.slice(2) : '分配中...';
-        }, 70);
+        }, 60);
 
         await new Promise(r => setTimeout(r, 1800));
         clearInterval(roll);
