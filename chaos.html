@@ -572,8 +572,8 @@
         teams.forEach((team, i) => {
             const total = team.reduce((s, p) => s + p.level, 0);
             html += `<div class="result-team team-${i}">
-                <h3>${names[i] || '队伍' + (i + 1)}（${team.length}人 · 总${total}星）</h3>
-                <div class="team-list">${team.map(p => `${p.name} <small style="opacity:.6">★${p.level}</small>`).join('<br>')}</div>
+                <h3>${names[i] || '队伍' + (i + 1)}（${team.length}人）</h3>
+                <div class="team-list">${team.map(p => `${p.name}`).join('<br>')}</div>
             </div>`;
         });
         document.getElementById('teamsResult').innerHTML = html;
