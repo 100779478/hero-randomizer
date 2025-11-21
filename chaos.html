@@ -463,6 +463,12 @@
     let allPlayers = PRESET_PLAYERS.map(p => ({...p}));
     let selected = new Set();
 
+    // 固定观众名单（可以在这里设置固定的观众）
+    const FIXED_SPECTATORS = [
+        // 可以在这里添加固定观众的名字，例如：
+        // "固定观众1", "固定观众2"
+    ];
+
     document.addEventListener('DOMContentLoaded', () => {
         renderAll();
         document.getElementById('autoTeamBtn').onclick = startBalance;
@@ -517,22 +523,57 @@
         setTimeout(realBalance, 1100);
     }
 
-    // 真正的均衡分配算法（总星级几乎完全相等）
+    // 真正的均衡分配算法（先抽观众，再分队）
     function realBalance() {
         const mode = parseInt(document.getElementById('modeSelect').value);
         const teamSize = mode;
-        const teamCount = Math.floor(selected.size / teamSize);
 
+        // 获取所有选中的玩家
         let players = Array.from(selected).map(name => {
             const p = allPlayers.find(x => x.name === name);
             return {name: p.name, level: p.level};
         });
 
+        // 1. 先确定观众
+        let spectators = [];
+
+        // 如果有固定观众，先加入观众列表
+        if (FIXED_SPECTATORS.length > 0) {
+            spectators = FIXED_SPECTATORS.filter(name =>
+                players.some(p => p.name === name)
+            );
+        }
+
+        // 计算需要的总玩家数
+        const totalPlayersNeeded = Math.floor(players.length / teamSize) * teamSize;
+        const extraPlayers = players.length - totalPlayersNeeded;
+
+        // 如果观众数量不足，随机补充观众
+        if (spectators.length < extraPlayers) {
+            const remainingPlayers = players.filter(p => !spectators.includes(p.name));
+            const neededSpectators = extraPlayers - spectators.length;
+
+            // 随机选择观众
+            const randomSpectators = [...remainingPlayers]
+                .sort(() => Math.random() - 0.5)
+                .slice(0, neededSpectators)
+                .map(p => p.name);
+
+            spectators = [...spectators, ...randomSpectators];
+        }
+
+        // 2. 从玩家列表中移除观众
+        const playingPlayers = players.filter(p => !spectators.includes(p.name));
+
+        // 3. 计算队伍数量
+        const teamCount = Math.floor(playingPlayers.length / teamSize);
+
+        // 4. 均衡分队算法
         // 每次都彻底打乱顺序，保证结果不同
-        players.sort(() => Math.random() - 0.5);
+        const shuffledPlayers = [...playingPlayers].sort(() => Math.random() - 0.5);
 
         // 按星级从高到低排序（关键）
-        players.sort((a, b) => b.level - a.level);
+        shuffledPlayers.sort((a, b) => b.level - a.level);
 
         // 初始化队伍
         const teams = Array.from({length: teamCount}, () => ({
@@ -541,7 +582,7 @@
         }));
 
         // 贪心分配：每次把当前最强的玩家分到当前总星级最低的队伍
-        players.forEach(player => {
+        shuffledPlayers.forEach(player => {
             // 找到当前总星级最低的队伍
             let targetTeam = teams[0];
             for (let i = 1; i < teams.length; i++) {
@@ -554,9 +595,6 @@
                 targetTeam.totalLevel += player.level;
             }
         });
-
-        // 剩余玩家作为观战
-        const spectators = players.slice(teamCount * teamSize).map(p => p.name);
 
         hideLoading();
         showResult(teams.map(t => t.players), spectators);
@@ -573,22 +611,25 @@
         teams.forEach((team, i) => {
             const total = team.reduce((s, p) => s + p.level, 0);
             html += `<div class="result-team team-${i}">
-                <h3>${names[i] || '队伍' + (i + 1)}（${team.length}人）</h3>
+                <h3>${names[i] || '队伍' + (i + 1)}</h3>
                 <div class="team-list">${team.map(p => `${p.name}`).join('<br>')}</div>
             </div>`;
         });
         document.getElementById('teamsResult').innerHTML = html;
 
         const specHtml = spectators.length
-            ? spectators.map(n => `<div class="spec-item">${n}</div>`).join('')
+            ? spectators.map(name => {
+                return `<div class="spec-item">${name} </div>`;
+            }).join('')
             : '<div style="color:#8b949e;padding:10px">无观战人员</div>';
         document.getElementById('specList').innerHTML = specHtml;
+        document.getElementById('specCount').textContent = spectators.length;
 
         document.getElementById('resultModal').style.display = 'flex';
     }
 
     // 修改关闭按钮的事件处理 - 只隐藏模态框，不清空选中状态
-    document.querySelector('.modal-buttons .btn-big').onclick = function() {
+    document.querySelector('.modal-buttons .btn-big').onclick = function () {
         document.getElementById('resultModal').style.display = 'none';
         // 注意：这里不再清空选中状态，保持玩家选中
     };
