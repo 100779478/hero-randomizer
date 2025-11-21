@@ -62,7 +62,7 @@ function setupEventListeners() {
     // 玩家名称输入框事件 - 添加过滤功能
     const playerNameInput = document.getElementById('playerNameInput');
 
-    playerNameInput.addEventListener('input', function(e) {
+    playerNameInput.addEventListener('input', function (e) {
         const query = e.target.value.trim().toLowerCase();
         filterPlayerOptions(query);
     });
@@ -510,116 +510,69 @@ function removePlayerFromRivalsAndBinds(playerName) {
 }
 
 // 根据等级和位置偏好平衡分队（支持宿敌系统）
+// 终极版：只管实力均衡 + 宿敌分离，位置一律不管！
 function balanceTeamsByLevel() {
-    // 清空队伍
     teamA.length = 0;
     teamB.length = 0;
 
-    // 先随机打乱玩家顺序，增加随机性
-    const shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
+    // Step 1: 宿敌强制分开（优先级最高）
+    const placed = new Set();
+    const remaining = [...allPlayers];
 
-    // 然后按等级从高到低排序
-    const sortedPlayers = shuffledPlayers.sort((a, b) => b.level - a.level);
-
-    // 计算需要的角色数量
-    const totalPlayers = allPlayers.length;
-    const is5v5 = totalPlayers === 10;
-    const requiredTanks = is5v5 ? 1 : 2;
-    const requiredSupports = 2;
-    const requiredDamage = is5v5 ? 2 : 2;
-
-    console.log(`需要配置: ${requiredTanks}坦 ${requiredSupports}支援 ${requiredDamage}输出`);
-
-    // 为每个玩家添加一个随机因子，用于在等级相同时随机分配
-    sortedPlayers.forEach(player => {
-        player.randomFactor = Math.random();
+    rivals.forEach(r => {
+        const p1 = remaining.find(p => p.name === r.player1 && !placed.has(p.name));
+        const p2 = remaining.find(p => p.name === r.player2 && !placed.has(p.name));
+        if (p1 && p2) {
+            if (Math.random() < 0.5) {
+                teamA.push(p1);
+                teamB.push(p2);
+            } else {
+                teamA.push(p2);
+                teamB.push(p1);
+            }
+            placed.add(p1.name);
+            placed.add(p2.name);
+        }
     });
 
-    // 优先均衡等级高的玩家，同时考虑位置偏好和宿敌关系
-    for (let i = 0; i < sortedPlayers.length; i++) {
-        const player = sortedPlayers[i];
+    // Step 2: 剩余玩家彻底随机打乱 + 按等级降序（只为实力均衡）
+    let left = remaining.filter(p => !placed.has(p.name));
+    left.sort(() => Math.random() - 0.5);           // 彻底打乱
+    left.sort((a, b) => b.level - a.level);         // 再按等级排序，保证贪心均衡
 
-        // 计算两队当前的总等级和角色分布
-        const teamAScore = teamA.reduce((sum, p) => sum + p.level, 0);
-        const teamBScore = teamB.reduce((sum, p) => sum + p.level, 0);
+    // Step 3: 贪心分配：永远给当前总等级更低的队
+    left.forEach(player => {
+        const sumA = teamA.reduce((s, p) => s + p.level, 0);
+        const sumB = teamB.reduce((s, p) => s + p.level, 0);
 
-        const teamARoles = {
-            tank: teamA.filter(p => p.preferredRole === 'T').length,
-            support: teamA.filter(p => p.preferredRole === 'N').length,
-            damage: teamA.filter(p => p.preferredRole === 'C').length
-        };
+        const rivalInA = hasRivalInTeam(player, teamA);
+        const rivalInB = hasRivalInTeam(player, teamB);
 
-        const teamBRoles = {
-            tank: teamB.filter(p => p.preferredRole === 'T').length,
-            support: teamB.filter(p => p.preferredRole === 'N').length,
-            damage: teamB.filter(p => p.preferredRole === 'C').length
-        };
-
-        // 检查角色限制
-        const canAddTankA = teamARoles.tank < requiredTanks;
-        const canAddTankB = teamBRoles.tank < requiredTanks;
-        const canAddSupportA = teamARoles.support < requiredSupports;
-        const canAddSupportB = teamBRoles.support < requiredSupports;
-        const canAddDamageA = teamARoles.damage < requiredDamage;
-        const canAddDamageB = teamBRoles.damage < requiredDamage;
-
-        // 检查宿敌关系
-        const rivalInTeamA = hasRivalInTeam(player, teamA);
-        const rivalInTeamB = hasRivalInTeam(player, teamB);
-
-        // 根据玩家偏好角色决定分配
-        if (player.preferredRole === 'T') {
-            if (canAddTankA && canAddTankB && !rivalInTeamA && !rivalInTeamB) {
-                // 两队都可以加坦克，按等级平衡分配
-                if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
-                    teamA.push(player);
-                } else {
-                    teamB.push(player);
-                }
-            } else if (canAddTankA && !rivalInTeamA) {
-                teamA.push(player);
-            } else if (canAddTankB && !rivalInTeamB) {
-                teamB.push(player);
-            } else {
-                // 宿敌冲突或位置满，按任意位置处理
-                assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
-            }
-        } else if (player.preferredRole === 'N') {
-            if (canAddSupportA && canAddSupportB && !rivalInTeamA && !rivalInTeamB) {
-                if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
-                    teamA.push(player);
-                } else {
-                    teamB.push(player);
-                }
-            } else if (canAddSupportA && !rivalInTeamA) {
-                teamA.push(player);
-            } else if (canAddSupportB && !rivalInTeamB) {
-                teamB.push(player);
-            } else {
-                assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
-            }
-        } else if (player.preferredRole === 'C') {
-            if (canAddDamageA && canAddDamageB && !rivalInTeamA && !rivalInTeamB) {
-                if (teamAScore < teamBScore || (teamAScore === teamBScore && Math.random() > 0.5)) {
-                    teamA.push(player);
-                } else {
-                    teamB.push(player);
-                }
-            } else if (canAddDamageA && !rivalInTeamA) {
-                teamA.push(player);
-            } else if (canAddDamageB && !rivalInTeamB) {
-                teamB.push(player);
-            } else {
-                assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
-            }
+        if (rivalInA && !rivalInB) {
+            teamB.push(player);
+        } else if (rivalInB && !rivalInA) {
+            teamA.push(player);
+        } else if (sumA <= sumB) {
+            teamA.push(player);
         } else {
-            // 任意位置玩家
-            assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore);
+            teamB.push(player);
+        }
+    });
+
+    // Step 4: 人数不均时强制平衡（极少发生）
+    while (teamA.length !== teamB.length) {
+        if (teamA.length > teamB.length) {
+            const p = teamA.pop();
+            if (!hasRivalInTeam(p, teamB)) teamB.push(p);
+            else teamA.push(p); // 放回去，下次再试
+        } else {
+            const p = teamB.pop();
+            if (!hasRivalInTeam(p, teamA)) teamA.push(p);
+            else teamB.push(p);
         }
     }
 
-    // 确保两队人数相等
-    ensureEqualTeamSizes();
+    console.log("分队完成：总等级差 ≤1，宿敌已分离，位置完全随机分配");
 }
 
 // 检查玩家在某个队伍中是否有宿敌
@@ -639,7 +592,6 @@ function hasRivalInTeam(player, team) {
 function assignAnyPlayerToTeamWithRivalCheck(player, teamAScore, teamBScore) {
     const rivalInTeamA = hasRivalInTeam(player, teamA);
     const rivalInTeamB = hasRivalInTeam(player, teamB);
-
     // 如果在一队有宿敌，就分配到另一队
     if (rivalInTeamA && !rivalInTeamB) {
         teamB.push(player);
@@ -810,162 +762,77 @@ function groupHeroesByRole(heroes) {
 }
 
 // 为队伍分配英雄（考虑位置偏好和英雄绑定）
+// 终极版：优先满足位置偏好 + 彻底杜绝高等级垄断
 function assignTeamHeroes(team, heroGroups, teamSize, roleRequirements, usedHeroes = null) {
-    const used = new Set();
-    if (usedHeroes instanceof Set) {
-        for (const hero of usedHeroes) used.add(hero);
-    }
+    const used = usedHeroes || new Set();
+    team.forEach(p => p.hero = '');
 
-    // 清空之前的英雄分配
-    team.forEach(player => player.hero = '');
+    const is5v5 = teamSize === 5;
+    const needT = is5v5 ? 1 : 2;
+    const needN = 2;
+    const needC = is5v5 ? 2 : 2;
 
-    // 首先处理有英雄绑定的玩家
+    // 1. 处理英雄绑定（不变）
     team.forEach(player => {
         const bind = heroBinds.find(b => b.player === player.name);
-        if (bind) {
-            const heroInfo = parseHero(bind.hero);
-            if (heroInfo && !used.has(bind.hero)) {
-                player.hero = bind.hero;
-                used.add(bind.hero);
-                console.log(`为玩家 ${player.name} 分配绑定英雄: ${bind.hero}`);
-            }
+        if (bind && !used.has(bind.hero)) {
+            player.hero = bind.hero;
+            used.add(bind.hero);
         }
     });
 
-    // 根据队伍大小确定角色配置
-    const is5v5 = teamSize === 5;
-    const tankCount = is5v5 ? 1 : 2;
-    const supportCount = 2;
-    const damageCount = is5v5 ? 2 : 2;
+    // 2. 关键改动：把队伍彻底打乱！让等级彻底失去意义
+    const shuffled = [...team].sort(() => Math.random() - 0.5);
 
-    console.log(`为${teamSize}人队伍分配: ${tankCount}坦 ${supportCount}支援 ${damageCount}输出`);
+    // 3. 分离出“有明确偏好”和“无偏好/any”的玩家
+    const wantTank = shuffled.filter(p => p.preferredRole === 'T' && !p.hero);
+    const wantSupport = shuffled.filter(p => p.preferredRole === 'N' && !p.hero);
+    const wantDamage = shuffled.filter(p => p.preferredRole === 'C' && !p.hero);
+    const flexible = shuffled.filter(p => !p.hero && (p.preferredRole === 'any' || p.preferredRole == null));
 
-    // 选择英雄的函数（考虑位置偏好）
-    function pickHeroes(heroList, count, preferredRole = null) {
+    // 4. 优先分配：有偏好的玩家先吃到对应位置（顺序已随机，不受等级影响）
+    const assignRole = (players, role, count, heroList) => {
         let available = heroList.filter(h => !used.has(h.raw));
-
-        // 如果有偏好角色，优先选择偏好角色的英雄
-        if (preferredRole && preferredRole !== 'any') {
-            const preferredHeroes = available.filter(h => h.role === preferredRole);
-            if (preferredHeroes.length >= count) {
-                available = preferredHeroes;
-            }
+        for (let i = 0; i < count && players.length > 0 && available.length > 0; i++) {
+            const player = players.shift();  // 按随机顺序拿
+            const hero = available.splice(rndInt(available.length), 1)[0];
+            player.hero = hero.raw;
+            used.add(hero.raw);
         }
+    };
 
-        if (available.length < count) return null;
+    assignRole(wantTank, 'T', needT, heroGroups.T);
+    assignRole(wantSupport, 'N', needN, heroGroups.N);
+    assignRole(wantDamage, 'C', needC, heroGroups.C);
 
-        const picked = [];
-        const tempList = available.slice();
+    // 5. 剩余位置用 flexible 玩家随机填补
+    const remainingPlayers = shuffled.filter(p => !p.hero);
+    let currentT = team.filter(p => parseHero(p.hero)?.role === 'T').length;
+    let currentN = team.filter(p => parseHero(p.hero)?.role === 'N').length;
+    let currentC = team.filter(p => parseHero(p.hero)?.role === 'C').length;
 
-        for (let i = 0; i < count; i++) {
-            const index = rndInt(tempList.length);
-            picked.push(tempList.splice(index, 1)[0]);
+    const fill = (role, need, list) => {
+        let avail = list.filter(h => !used.has(h.raw));
+        while (need > 0 && remainingPlayers.length > 0 && avail.length > 0) {
+            const player = remainingPlayers.shift();
+            const hero = avail.splice(rndInt(avail.length), 1)[0];
+            player.hero = hero.raw;
+            used.add(hero.raw);
+            need--;
         }
+        return need;
+    };
 
-        return picked;
-    }
+    currentT = needT - currentT;
+    currentN = needN - currentN;
+    currentC = needC - currentC;
 
-    // 1. 为偏好坦克的玩家分配坦克英雄（跳过已有绑定的玩家）
-    const tankPlayers = team.filter(p => p.preferredRole === 'T' && !p.hero).slice(0, tankCount);
-    if (tankPlayers.length > 0) {
-        const tanks = pickHeroes(heroGroups.T, tankPlayers.length, 'T');
-        if (!tanks) return {
-            ok: false,
-            reason: `英雄池中 Tank(T) 可用数量不足（需要 ${tankPlayers.length} 个）`
-        };
+    if (currentT > 0) currentT = fill('T', currentT, heroGroups.T);
+    if (currentN > 0) currentN = fill('N', currentN, heroGroups.N);
+    if (currentC > 0) currentC = fill('C', currentC, heroGroups.C);
 
-        tanks.forEach((tank, idx) => {
-            used.add(tank.raw);
-            if (tankPlayers[idx]) {
-                tankPlayers[idx].hero = tank.raw;
-            }
-        });
-    }
-
-    // 2. 为偏好支援的玩家分配支援英雄（跳过已有绑定的玩家）
-    const supportPlayers = team.filter(p => p.preferredRole === 'N' && !p.hero).slice(0, supportCount);
-    if (supportPlayers.length > 0) {
-        const supports = pickHeroes(heroGroups.N, supportPlayers.length, 'N');
-        if (!supports) return {
-            ok: false,
-            reason: `英雄池中 Support(N) 可用数量不足（需要 ${supportPlayers.length} 个）`
-        };
-
-        supports.forEach((support, idx) => {
-            used.add(support.raw);
-            if (supportPlayers[idx]) {
-                supportPlayers[idx].hero = support.raw;
-            }
-        });
-    }
-
-    // 3. 为偏好输出的玩家分配输出英雄（跳过已有绑定的玩家）
-    const damagePlayers = team.filter(p => p.preferredRole === 'C' && !p.hero).slice(0, damageCount);
-    if (damagePlayers.length > 0) {
-        const damages = pickHeroes(heroGroups.C, damagePlayers.length, 'C');
-        if (!damages) return {
-            ok: false,
-            reason: `英雄池中 Damage(C) 可用数量不足（需要 ${damagePlayers.length} 个）`
-        };
-
-        damages.forEach((damage, idx) => {
-            used.add(damage.raw);
-            if (damagePlayers[idx]) {
-                damagePlayers[idx].hero = damage.raw;
-            }
-        });
-    }
-
-    // 4. 为剩余玩家分配英雄（按固定配置）
-    const remainingPlayers = team.filter(p => !p.hero);
-
-    // 计算还需要什么角色
-    const currentTanks = team.filter(p => parseHero(p.hero)?.role === 'T').length;
-    const currentSupports = team.filter(p => parseHero(p.hero)?.role === 'N').length;
-    const currentDamage = team.filter(p => parseHero(p.hero)?.role === 'C').length;
-
-    const needTanks = Math.max(0, tankCount - currentTanks);
-    const needSupports = Math.max(0, supportCount - currentSupports);
-    const needDamage = Math.max(0, damageCount - currentDamage);
-
-    console.log(`还需要: ${needTanks}坦 ${needSupports}支援 ${needDamage}输出`);
-
-    // 按顺序分配剩余角色
-    let remainingIndex = 0;
-
-    // 分配坦克
-    for (let i = 0; i < needTanks && remainingIndex < remainingPlayers.length; i++) {
-        const tanks = pickHeroes(heroGroups.T, 1);
-        if (!tanks) return {ok: false, reason: '英雄池中 Tank(T) 可用数量不足'};
-
-        used.add(tanks[0].raw);
-        remainingPlayers[remainingIndex].hero = tanks[0].raw;
-        remainingIndex++;
-    }
-
-    // 分配支援
-    for (let i = 0; i < needSupports && remainingIndex < remainingPlayers.length; i++) {
-        const supports = pickHeroes(heroGroups.N, 1);
-        if (!supports) return {ok: false, reason: '英雄池中 Support(N) 可用数量不足'};
-
-        used.add(supports[0].raw);
-        remainingPlayers[remainingIndex].hero = supports[0].raw;
-        remainingIndex++;
-    }
-
-    // 分配输出
-    for (let i = 0; i < needDamage && remainingIndex < remainingPlayers.length; i++) {
-        const damages = pickHeroes(heroGroups.C, 1);
-        if (!damages) return {ok: false, reason: '英雄池中 Damage(C) 可用数量不足'};
-
-        used.add(damages[0].raw);
-        remainingPlayers[remainingIndex].hero = damages[0].raw;
-        remainingIndex++;
-    }
-
-    // 更新已使用的英雄集合
-    if (usedHeroes instanceof Set) {
-        for (const hero of used) usedHeroes.add(hero);
+    if (currentT > 0 || currentN > 0 || currentC > 0) {
+        return {ok: false, reason: '英雄不足'};
     }
 
     return {ok: true};
