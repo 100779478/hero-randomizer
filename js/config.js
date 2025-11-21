@@ -51,6 +51,7 @@ window.PRESET_PLAYERS = [
     {name: ' 凌翊 ', level: 1, preferredRole: 'any', description: '未知'},
     {name: ' 驴驴 ', level: 3, preferredRole: 'any', description: '未知'},
     {name: 'PeanutFan', level: 3, preferredRole: 'any', description: '未知'},
+    {name: '软软', level: 3, preferredRole: 'any', description: '孙妈的启蒙艺术老师'},
     {name: '喵喵大魔王', level: 2, preferredRole: 'any', description: '未知'},
     {name: ' 迈克米伦庄园园长 ', level: 4, preferredRole: 'any', description: '未知'},
     {name: ' 马丘比丘的小羊 ', level: 1, preferredRole: 'any', description: '未知'},
