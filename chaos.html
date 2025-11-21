@@ -586,6 +586,12 @@
 
         document.getElementById('resultModal').style.display = 'flex';
     }
+
+    // 修改关闭按钮的事件处理 - 只隐藏模态框，不清空选中状态
+    document.querySelector('.modal-buttons .btn-big').onclick = function() {
+        document.getElementById('resultModal').style.display = 'none';
+        // 注意：这里不再清空选中状态，保持玩家选中
+    };
 </script>
 </body>
 </html>
