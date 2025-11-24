@@ -887,9 +887,10 @@ async function startDraw() {
         // 显示最终结果（不显示英雄列）
         rollText.style.display = 'none';
         finalResult.style.display = 'block';
-
+        const randomItem = window.MAP[Math.floor(Math.random() * window.MAP.length)];
         finalResult.innerHTML = `
                 <h3>分队结果</h3>
+                <div style="text-align:center;color:#eaecef;font-size:20px;font-weight:bold;margin:18px 0;">地图：${randomItem}</div>
                 <table>
                     <thead><tr><th>队伍</th><th>玩家</th><th>偏好位置</th></tr></thead>
                     <tbody>
@@ -1033,9 +1034,10 @@ async function startDraw() {
         const roleB = roleOrder[parseHero(b.hero)?.role] || 99;
         return roleA - roleB;
     });
-
+    const randomItem = window.MAP[Math.floor(Math.random() * window.MAP.length)]
     finalResult.innerHTML = `
             <h3>抽取结果</h3>
+            <div style="text-align:center;color:#eaecef;font-size:20px;font-weight:bold;margin:18px 0;">地图：${randomItem}</div>
             <table>
                 <thead><tr><th>队伍</th><th>玩家</th><th>英雄</th><th>位置</th><th>偏好</th></tr></thead>
                 <tbody>

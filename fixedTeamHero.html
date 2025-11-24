@@ -696,9 +696,10 @@
         document.getElementById('rollText').style.display = 'none';
         document.getElementById('finalResult').style.display = 'block';
         document.getElementById('resultButtons').style.display = 'flex';
-
+        const randomItem = window.MAP[Math.floor(Math.random() * window.MAP.length)];
         document.getElementById('finalResult').innerHTML = `
         <h3 style="text-align:center;color:#ffcc00;margin:18px 0;">${size}v${size} 最终结果</h3>
+        <div style="text-align:center;color:#eaecef;font-size:20px;font-weight:bold;margin:18px 0;">地图：${randomItem}</div>
         <table class="result-table">
             <thead><tr><th>队伍</th><th>玩家</th><th>英雄</th></tr></thead>
             <tbody>
