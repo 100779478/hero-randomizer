@@ -325,7 +325,8 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(255, 204, 0, 0.6);
         }
-        .backHome{
+
+        .backHome {
             position: fixed;
             top: 25px;
             left: 25px;
@@ -405,22 +406,24 @@
     </div>
 
     <!-- 快速添加 -->
-    <div id="selectMode" class="player-mode">
-        <div class="player-selector" id="playerSelector">
-            <!-- 玩家选项 -->
-        </div>
-    </div>
-    <div style="position: relative;background: #302f2f;width: 98%;margin:5px auto;padding:0 5px;border-radius: 10px;height: 130px;overflow-y: scroll">
-        <div style="color: #ffcc00;font-weight: bold;text-shadow: 0 0 10px #ffaa00;position: sticky;top: 0;background: #302f2f;display: flex;align-items: center;justify-content: space-between;padding: 5px 0;">
-            <div style="flex: 1;text-align: center;">
-                👩‍🚀已选中玩家
+    <div style="display: flex;justify-content: space-around;gap: 10px">
+        <div id="selectMode" class="player-mode" style="width: 400%">
+            <div class="player-selector" id="playerSelector">
+                <!-- 玩家选项 -->
             </div>
-            <button id="clearPlayersBtn" class="small-btn" style="background: #e75757;margin: 0;">
-                清空列表
-            </button>
         </div>
-        <div class="player-list" id="playerList">
-            <!-- 玩家列表 -->
+        <div style="position: relative;background: #302f2f;width: 98%;margin:5px auto;padding:0 5px;border-radius: 10px;height: 345px">
+            <div style="color: #ffcc00;font-weight: bold;text-shadow: 0 0 10px #ffaa00;position: sticky;top: 0;background: #302f2f;display: flex;align-items: center;justify-content: space-between;padding: 5px 0">
+                <div style="flex: 1;text-align: center;">
+                    👩‍🚀已选中玩家
+                </div>
+                <button id="clearPlayersBtn" class="small-btn" style="background: #e75757;margin: 0;">
+                    清空列表
+                </button>
+            </div>
+            <div class="player-list" id="playerList">
+                <!-- 玩家列表 -->
+            </div>
         </div>
     </div>
 </div>
