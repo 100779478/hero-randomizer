@@ -36,7 +36,6 @@ window.PRESET_PLAYERS = [
     {name: '齐格勒医生', level: 2, preferredRole: 'any', description: '真正意义上的战地医生'},
     {name: '在爱就不礼貌了', level: 4, preferredRole: 'any', description: '本人很礼貌但单挑绝不仁慈'},
     {name: '章鱼', level: 1, preferredRole: 'any', description: '喜欢自我欺骗的数字人'},
-    {name: '四月绽放桜花雨', level: 3, preferredRole: 'any', description: '听说是百强蛆'},
     {name: 'SuperLu', level: 3, preferredRole: 'any', description: '性感露背男'},
     {name: '吼爹', level: 3, preferredRole: 'any', description: '渣克镇的话事人'},
     {name: '叫我泽村就行啦', level: 4, preferredRole: 'any', description: '芙蕾雅专精'},
@@ -50,7 +49,6 @@ window.PRESET_PLAYERS = [
     {name: '驴驴', level: 3, preferredRole: 'any', description: '未知'},
     {name: 'PeanutFan', level: 3, preferredRole: 'any', description: '未知'},
     {name: '软软', level: 3, preferredRole: 'any', description: '孙妈的启蒙艺术老师'},
-    {name: '喵喵大魔王', level: 2, preferredRole: 'any', description: '未知'},
     {name: '迈克米伦庄园园长', level: 4, preferredRole: 'any', description: '未知'},
     {name: '马丘比丘的小羊', level: 1, preferredRole: 'any', description: '未知'},
     {name: '星野哲', level: 2, preferredRole: 'any', description: '未知'},
@@ -73,7 +71,6 @@ window.PRESET_PLAYERS = [
     {name: '花落微涼夢清幽', level: 2, preferredRole: 'any', description: '未知'},
     {name: '可以亲亲猫猫头吗', level: 1, preferredRole: 'any', description: '未知'},
     {name: '伤心猫猫', level: 1, preferredRole: 'any', description: '未知'},
-    {name: '在逃胖熊猫', level: 1, preferredRole: 'any', description: '未知'},
     {name: 'TAEYEON', level: 1, preferredRole: 'any', description: '未知'},
     {name: '如果当时', level: 1, preferredRole: 'any', description: '未知'},
 ];
