@@ -14,7 +14,7 @@ window.PRESET_PLAYERS = [
     {name: '内鬼', level: 4, preferredRole: 'any', description: '无能的内鬼'},
     {name: '狗哥', level: 4, preferredRole: 'any', description: '宗师枪法，青铜站位'},
     {name: 'ONENONLY', level: 1, preferredRole: 'any', description: '小炮台2号'},
-    {name: 'Vision', level: 2, preferredRole: 'any', description: '永远都是主播模式的靓仔'},
+    {name: 'Vision', level: 3, preferredRole: 'any', description: '永远都是主播模式的靓仔'},
     {name: '茄子', level: 3, preferredRole: 'any', description: '蔬菜，又能输又菜'},
     {name: '夏目蓝', level: 3, preferredRole: 'any', description: '蛆王，能在团战里原地蛀穿盾牌'},
     {name: '小匕首', level: 2, preferredRole: 'any', description: '匕姆斯邦德，6帧的超级大蛆'},
