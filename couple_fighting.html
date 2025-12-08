@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>真实单败淘汰赛 - 按需轮空 + 手动选择晋级</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            color: #ecf0f1;
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+        }
+
+        .btn-regenerate {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* 树状图区域 */
+        .bracket-area {
+            padding: 40px 30px;
+            min-height: 800px;
+            background: #f8f9fa;
+        }
+
+        .bracket-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 40px 0;
+            min-height: 700px;
+            gap: 60px;
+        }
+
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            min-width: 280px;
+            position: relative;
+        }
+
+        .round-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 15px;
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .match-card {
+            background: white;
+            border-radius: 12px;
+            margin: 30px 0;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 3px solid #ecf0f1;
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+
+        .match-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            border-color: #3498db;
+        }
+
+        .team-row {
+            padding: 20px;
+            cursor: pointer;
+            border-bottom: 2px solid #f1f2f6;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-height: 70px;
+        }
+
+        .team-row:hover {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .team-row.winner {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left: 6px solid #28a745;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .team-row.bye {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 6px dashed #ffc107;
+            color: #856404;
+            cursor: default;
+            font-style: italic;
+        }
+
+        .team-name {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .team-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* 连接线样式 */
+        .connector {
+            position: absolute;
+            right: -30px;
+            width: 30px;
+            height: 100px;
+        }
+
+        .connector-horizontal {
+            width: 30px;
+            height: 3px;
+            background: #95a5a6;
+            position: absolute;
+            top: 50%;
+            right: 0;
+        }
+
+        .connector-vertical {
+            width: 3px;
+            height: 50px;
+            background: #95a5a6;
+            position: absolute;
+            right: 0;
+        }
+
+        /* 冠军展示 */
+        .champion-container {
+            text-align: center;
+            padding: 60px 20px;
+            display: none;
+        }
+
+        .champion-card {
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            color: #333;
+            padding: 50px;
+            border-radius: 25px;
+            display: inline-block;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: championGlow 2s infinite alternate;
+        }
+
+        @keyframes championGlow {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            }
+            100% {
+                transform: scale(1.05);
+                box-shadow: 0 30px 80px rgba(255, 215, 0, 0.4);
+            }
+        }
+
+        .champion-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .champion-name {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* 信息提示 */
+        .info-panel {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .info-panel.show {
+            display: block;
+        }
+
+        .info-icon {
+            color: #2196f3;
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        /* 队伍列表 */
+        .teams-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .team-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .team-tag:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .team-tag .remove {
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .bracket-container {
+                flex-direction: column;
+                gap: 40px;
+            }
+
+            .bracket-round {
+                min-width: 100%;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            input[type="text"] {
+                width: 100%;
+            }
+
+            .champion-name {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="header">
+        <h1>🏆 真实单败淘汰赛系统</h1>
+        <div class="subtitle">手动选择晋级队伍 | 按需轮空处理 | 专业树状对战图</div>
+    </div>
+
+    <div class="controls">
+        <div class="input-group">
+            <input type="text" id="teamInput" placeholder="输入队伍名称（按回车添加）" autocomplete="off">
+            <button class="btn-add" onclick="addTeam()">
+                <span>➕</span> 添加队伍
+            </button>
+        </div>
+
+        <div id="teamsList" class="teams-list">
+            <!-- 队伍标签会动态生成 -->
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-regenerate" onclick="renderTournament()">
+                <span>🔄</span> 生成/更新比赛
+            </button>
+            <button class="btn-clear" onclick="clearAll()">
+                <span>🗑️</span> 清空所有
+            </button>
+        </div>
+
+        <div class="stats">
+            当前队伍数: <span id="teamCount">0</span> |
+            总轮次: <span id="totalRounds">0</span> |
+            当前状态: <span id="tournamentStatus">未开始</span>
+        </div>
+    </div>
+
+    <div id="infoPanel" class="info-panel">
+        <div style="display: flex; align-items: center;">
+            <span class="info-icon">💡</span>
+            <span id="infoMessage">提示信息</span>
+        </div>
+    </div>
+
+    <div class="bracket-area">
+        <div id="bracketContainer" class="bracket-container">
+            <!-- 树状图会动态生成在这里 -->
+        </div>
+    </div>
+
+    <div id="championContainer" class="champion-container">
+        <div class="champion-card">
+            <div class="champion-title">🏆 冠军诞生 🏆</div>
+            <div class="champion-name" id="championName">等待产生...</div>
+            <div style="margin-top: 20px; color: #666;">恭喜这支队伍获得最终胜利！</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 全局状态
+    let tournament = {
+        teams: [],
+        rounds: [],
+        winners: {},
+        currentRound: 1,
+        champion: null,
+        totalRounds: 0
+    };
+
+    // DOM 元素
+    const elements = {
+        teamInput: document.getElementById('teamInput'),
+        teamsList: document.getElementById('teamsList'),
+        teamCount: document.getElementById('teamCount'),
+        totalRounds: document.getElementById('totalRounds'),
+        tournamentStatus: document.getElementById('tournamentStatus'),
+        infoPanel: document.getElementById('infoPanel'),
+        infoMessage: document.getElementById('infoMessage'),
+        bracketContainer: document.getElementById('bracketContainer'),
+        championContainer: document.getElementById('championContainer'),
+        championName: document.getElementById('championName')
+    };
+
+    // 初始化
+    function init() {
+        updateTeamsList();
+        setupEventListeners();
+    }
+
+    // 设置事件监听
+    function setupEventListeners() {
+        // 回车添加队伍
+        elements.teamInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTeam();
+            }
+        });
+    }
+
+    // 显示提示信息
+    function showInfo(message, type = 'info') {
+        elements.infoMessage.textContent = message;
+        elements.infoPanel.className = `info-panel ${type}`;
+        elements.infoPanel.classList.add('show');
+
+        setTimeout(() => {
+            elements.infoPanel.classList.remove('show');
+        }, 3000);
+    }
+
+    // 添加队伍
+    function addTeam() {
+        const teamName = elements.teamInput.value.trim();
+
+        if (!teamName) {
+            showInfo('请输入有效的队伍名称！', 'error');
+            return;
+        }
+
+        if (tournament.teams.includes(teamName)) {
+            showInfo('该队伍名称已存在！', 'error');
+            return;
+        }
+
+        tournament.teams.push(teamName);
+        elements.teamInput.value = '';
+        updateTeamsList();
+        showInfo(`成功添加队伍: ${teamName}`, 'success');
+    }
+
+    // 移除队伍
+    function removeTeam(index) {
+        const removedTeam = tournament.teams.splice(index, 1)[0];
+        updateTeamsList();
+        showInfo(`已移除队伍: ${removedTeam}`, 'info');
+
+        // 如果比赛已开始，需要重置
+        if (tournament.rounds.length > 0) {
+            renderTournament();
+        }
+    }
+
+    // 更新队伍列表显示
+    function updateTeamsList() {
+        elements.teamCount.textContent = tournament.teams.length;
+
+        if (tournament.teams.length === 0) {
+            elements.teamsList.innerHTML = '<div style="color: #999; text-align: center; width: 100%;">暂无队伍，请添加队伍开始比赛</div>';
+            return;
+        }
+
+        elements.teamsList.innerHTML = tournament.teams.map((team, index) => `
+        <div class="team-tag">
+            <span>${index + 1}. ${team}</span>
+            <span class="remove" onclick="removeTeam(${index})">×</span>
+        </div>
+    `).join('');
+    }
+
+    // 清空所有
+    function clearAll() {
+        if (confirm('确定要清空所有队伍和比赛数据吗？')) {
+            tournament.teams = [];
+            tournament.rounds = [];
+            tournament.winners = {};
+            tournament.currentRound = 1;
+            tournament.champion = null;
+
+            updateTeamsList();
+            elements.bracketContainer.innerHTML = '';
+            elements.championContainer.style.display = 'none';
+            elements.tournamentStatus.textContent = '未开始';
+            showInfo('已清空所有数据，可以重新开始比赛', 'info');
+        }
+    }
+
+    // 渲染整个锦标赛
+    function renderTournament() {
+        // 验证队伍数量
+        if (tournament.teams.length < 2) {
+            showInfo('至少需要2支队伍才能开始比赛！', 'error');
+            return;
+        }
+
+        // 重置状态（保留队伍）
+        tournament.rounds = [];
+        tournament.winners = {};
+        tournament.currentRound = 1;
+        tournament.champion = null;
+
+        // 计算总轮次
+        tournament.totalRounds = Math.ceil(Math.log2(tournament.teams.length));
+        elements.totalRounds.textContent = tournament.totalRounds;
+
+        // 生成第一轮
+        generateFirstRound();
+
+        // 更新状态
+        elements.tournamentStatus.textContent = '进行中';
+
+        // 渲染所有轮次
+        renderAllRounds();
+    }
+
+    // 生成第一轮
+    function generateFirstRound() {
+        // 随机排序队伍
+        const shuffledTeams = [...tournament.teams].sort(() => Math.random() - 0.5);
+        const roundMatches = [];
+
+        // 处理奇数队伍的情况
+        if (shuffledTeams.length % 2 !== 0) {
+            // 有一个轮空
+            const byeTeam = shuffledTeams.pop(); // 取最后一个作为轮空
+            roundMatches.push({
+                type: 'bye',
+                teams: [byeTeam],
+                round: 1,
+                matchIndex: 0
+            });
+            showInfo(`队伍 ${byeTeam} 轮空晋级第二轮！`, 'warning');
+        }
+
+        // 创建正常比赛
+        for (let i = 0; i < shuffledTeams.length; i += 2) {
+            roundMatches.push({
+                type: 'normal',
+                teams: [shuffledTeams[i], shuffledTeams[i + 1]],
+                round: 1,
+                matchIndex: roundMatches.length
+            });
+        }
+
+        tournament.rounds[0] = roundMatches;
+    }
+
+    // 渲染所有轮次
+    function renderAllRounds() {
+        elements.bracketContainer.innerHTML = '';
+        elements.championContainer.style.display = 'none';
+
+        // 为每一轮创建容器
+        for (let round = 1; round <= tournament.totalRounds; round++) {
+            const roundContainer = createRoundContainer(round);
+            elements.bracketContainer.appendChild(roundContainer);
+
+            // 渲染该轮次的比赛
+            renderRoundMatches(round, roundContainer);
+
+            // 如果不是最后一轮，添加连接线占位
+            if (round < tournament.totalRounds) {
+                addConnectorPlaceholder();
+            }
+        }
+
+        // 检查是否产生冠军
+        checkForChampion();
+    }
+
+    // 创建轮次容器
+    function createRoundContainer(roundNumber) {
+        const roundDiv = document.createElement('div');
+        roundDiv.className = 'bracket-round';
+        roundDiv.id = `round-${roundNumber}`;
+
+        const roundName = getRoundName(roundNumber, tournament.totalRounds);
+        roundDiv.innerHTML = `
+        <div class="round-header">${roundName}</div>
+    `;
+
+        return roundDiv;
+    }
+
+    // 渲染指定轮次的比赛
+    function renderRoundMatches(roundNumber, container) {
+        const roundMatches = tournament.rounds[roundNumber - 1] || [];
+
+        if (roundMatches.length === 0) {
+            // 如果该轮次还没有比赛，检查是否需要生成
+            generateNextRound(roundNumber);
+            return;
+        }
+
+        roundMatches.forEach((match, matchIndex) => {
+            const matchCard = createMatchCard(match, roundNumber, matchIndex);
+            container.appendChild(matchCard);
+        });
+    }
+
+    // 创建比赛卡片
+    function createMatchCard(match, roundNumber, matchIndex) {
+        const matchCard = document.createElement('div');
+        matchCard.className = 'match-card';
+        matchCard.dataset.round = roundNumber;
+        matchCard.dataset.match = matchIndex;
+
+        if (match.type === 'bye') {
+            // 轮空比赛
+            matchCard.innerHTML = `
+            <div class="team-row bye">
+                <div>
+                    <div class="team-name">${match.teams[0]}</div>
+                    <div class="team-info">轮空晋级</div>
+                </div>
+            </div>
+        `;
+        } else {
+            // 正常比赛
+            const team1 = match.teams[0];
+            const team2 = match.teams[1];
+            const winnerKey = `${roundNumber}-${matchIndex}`;
+            const winner = tournament.winners[winnerKey];
+
+            matchCard.innerHTML = `
+            <div class="team-row ${winner === team1 ? 'winner' : ''}"
+                 onclick="selectWinner(${roundNumber}, ${matchIndex}, '${team1}')">
+                <div>
+                    <div class="team-name">${team1}</div>
+                    <div class="team-info">${winner === team1 ? '已晋级 ✓' : ''}</div>
+                </div>
+            </div>
+            <div class="team-row ${winner === team2 ? 'winner' : ''}"
+                 onclick="selectWinner(${roundNumber}, ${matchIndex}, '${team2}')">
+                <div>
+                    <div class="team-name">${team2}</div>
+                    <div class="team-info">${winner === team2 ? '已晋级 ✓' : ''}</div>
+                </div>
+            </div>
+        `;
+        }
+
+        return matchCard;
+    }
+
+    // 选择获胜者
+    function selectWinner(round, matchIndex, winnerTeam) {
+        const winnerKey = `${round}-${matchIndex}`;
+
+        // 检查这场比赛是否已经有结果
+        if (tournament.winners[winnerKey]) {
+            showInfo('这场比赛已经有结果了！', 'error');
+            return;
+        }
+
+        // 记录获胜者
+        tournament.winners[winnerKey] = winnerTeam;
+
+        // 更新显示
+        const matchCard = document.querySelector(`.match-card[data-round="${round}"][data-match="${matchIndex}"]`);
+        if (matchCard) {
+            // 更新获胜者样式
+            const teamRows = matchCard.querySelectorAll('.team-row');
+            teamRows.forEach(row => {
+                row.classList.remove('winner');
+                if (row.querySelector('.team-name').textContent === winnerTeam) {
+                    row.classList.add('winner');
+                }
+            });
+        }
+
+        showInfo(`已选择 ${winnerTeam} 晋级下一轮！`, 'success');
+
+        // 检查当前轮次是否全部完成
+        checkRoundCompletion(round);
+    }
+
+    // 检查轮次完成情况
+    function checkRoundCompletion(round) {
+        const roundMatches = tournament.rounds[round - 1] || [];
+        const allComplete = roundMatches.every((match, index) => {
+            if (match.type === 'bye') return true; // 轮空自动完成
+            return !!tournament.winners[`${round}-${index}`];
+        });
+
+        if (allComplete) {
+            // 当前轮次完成，生成下一轮
+            generateNextRound(round + 1);
+            renderAllRounds();
+        }
+    }
+
+    // 生成下一轮
+    function generateNextRound(nextRound) {
+        if (nextRound > tournament.totalRounds) return;
+
+        // 获取上一轮的获胜者
+        const prevRound = nextRound - 1;
+        const prevMatches = tournament.rounds[prevRound - 1] || [];
+        const winners = [];
+
+        prevMatches.forEach((match, index) => {
+            if (match.type === 'bye') {
+                // 轮空队伍自动晋级
+                winners.push(...match.teams);
+            } else {
+                const winner = tournament.winners[`${prevRound}-${index}`];
+                if (winner) {
+                    winners.push(winner);
+                }
+            }
+        });
+
+        if (winners.length === 0) return;
+
+        // 处理奇数的晋级队伍
+        let nextRoundMatches = [];
+
+        if (winners.length === 1) {
+            // 只剩一支队伍，就是冠军
+            tournament.champion = winners[0];
+            return;
+        }
+
+        if (winners.length % 2 !== 0) {
+            // 有奇数个晋级队伍，随机抽一个轮空
+            const byeIndex = Math.floor(Math.random() * winners.length);
+            const byeTeam = winners.splice(byeIndex, 1)[0];
+
+            nextRoundMatches.push({
+                type: 'bye',
+                teams: [byeTeam],
+                round: nextRound,
+                matchIndex: 0
+            });
+
+            showInfo(`队伍 ${byeTeam} 轮空晋级下一轮！`, 'warning');
+        }
+
+        // 创建正常比赛
+        for (let i = 0; i < winners.length; i += 2) {
+            nextRoundMatches.push({
+                type: 'normal',
+                teams: [winners[i], winners[i + 1]],
+                round: nextRound,
+                matchIndex: nextRoundMatches.length
+            });
+        }
+
+        tournament.rounds[nextRound - 1] = nextRoundMatches;
+        tournament.currentRound = nextRound;
+    }
+
+    // 添加连接线占位
+    function addConnectorPlaceholder() {
+        const connectorDiv = document.createElement('div');
+        connectorDiv.className = 'connector';
+        connectorDiv.innerHTML = `
+        <div class="connector-horizontal"></div>
+        <div class="connector-vertical" style="top: 25%;"></div>
+        <div class="connector-vertical" style="bottom: 25%;"></div>
+    `;
+        elements.bracketContainer.appendChild(connectorDiv);
+    }
+
+    // 检查是否产生冠军
+    function checkForChampion() {
+        const finalRound = tournament.totalRounds;
+        const finalMatches = tournament.rounds[finalRound - 1] || [];
+
+        if (finalMatches.length === 1) {
+            const finalMatch = finalMatches[0];
+            const finalWinnerKey = `${finalRound}-0`;
+            const champion = tournament.winners[finalWinnerKey];
+
+            if (champion) {
+                tournament.champion = champion;
+                showChampion();
+            }
+        }
+    }
+
+    // 显示冠军
+    function showChampion() {
+        elements.championName.textContent = tournament.champion;
+        elements.championContainer.style.display = 'block';
+        elements.tournamentStatus.textContent = '已结束';
+
+        // 滚动到冠军位置
+        elements.championContainer.scrollIntoView({behavior: 'smooth'});
+    }
+
+    // 获取轮次名称
+    function getRoundName(roundNumber, totalRounds) {
+        if (roundNumber === totalRounds) return '🏆 决赛';
+        if (roundNumber === totalRounds - 1) return '半决赛';
+        if (roundNumber === totalRounds - 2) return '四分之一决赛';
+        if (roundNumber === totalRounds - 3) return '八分之一决赛';
+
+        // 根据队伍数量确定轮次名称
+        const matchesInRound = Math.pow(2, totalRounds - roundNumber);
+        if (matchesInRound >= 32) return `${matchesInRound}强赛`;
+        if (matchesInRound >= 16) return '十六强赛';
+        if (matchesInRound >= 8) return '八强赛';
+        if (matchesInRound >= 4) return '四强赛';
+
+        return `第${roundNumber}轮`;
+    }
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        init();
+        renderTournament();
+    });
+</script>
+</body>
+</html>
