@@ -533,6 +533,18 @@
             <button class="mode-btn">ENTER</button>
         </div>
 
+        <div class="mode-card" onclick="selectMode('guaiwu')">
+            <div class="mode-icon">怪物哥专享</div>
+            <div class="mode-description">一切为怪物哥服务</div>
+            <ul class="mode-features">
+                <li>理解怪物哥</li>
+                <li>成为怪物哥</li>
+                <li>超越怪物哥</li>
+                <li>怪物哥YYDS</li>
+            </ul>
+            <button class="mode-btn">ENTER</button>
+        </div>
+
 <!--        <div class="mode-card" onclick="selectMode('couple')">-->
 <!--            <div class="mode-icon">cp对战模式</div>-->
 <!--            <div class="mode-description">cp组队 · 淘汰赛</div>-->
@@ -615,6 +627,9 @@
                     break;
                 case 'couple':
                     location.href = 'couple_fighting.html';
+                    break;
+                case 'guaiwu':
+                    location.href = 'guaiwu.html';
                     break;
             }
         }, 1000);
