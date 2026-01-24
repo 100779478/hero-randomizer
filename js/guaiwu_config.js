@@ -8,6 +8,7 @@ window.PRESET_PLAYERS = [
     {name: '饿了么树玉米油', level: 4, preferredRole: 'any', description: '未知'},
     {name: '伤心公主', level: 4, preferredRole: 'any', description: '未知'},
     {name: '琳工', level: 4, preferredRole: 'any', description: '未知'},
+    {name: '话多', level: 4, preferredRole: 'any', description: '未知'},
     {name: '许愿', level: 4, preferredRole: 'any', description: '未知'},
     {name: '祁煜', level: 4, preferredRole: 'any', description: '未知'},
 ];
