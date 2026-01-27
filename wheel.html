@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>丝滑比赛抽奖轮盘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff0080, #00ccff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 10px rgba(255, 0, 128, 0.3);
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .wheel-section {
+            flex: 1;
+            min-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 20px auto;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                    0 0 50px rgba(255, 0, 128, 0.5),
+                    inset 0 0 100px rgba(0, 0, 0, 0.8);
+            border: 8px solid #222;
+            /* 使用GPU加速 */
+            will-change: transform;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+        }
+
+        .wheel::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        .sector {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: bottom right;
+            left: 0;
+            top: 0;
+            text-align: center;
+            padding-top: 30px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 18px;
+            /* 提升渲染性能 */
+            backface-visibility: hidden;
+        }
+
+        .sector-content {
+            transform: rotate(45deg);
+            transform-origin: center;
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 20px;
+            left: 0;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 80px;
+            z-index: 20;
+            filter: drop-shadow(0 5px 15px rgba(255, 255, 255, 0.5));
+            pointer-events: none;
+        }
+
+        .pointer svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls-section {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px;
+            background: #2a2a3e;
+            border: 2px solid #444;
+            color: #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #ff0080, #00ccff);
+            color: white;
+            border-color: #00ccff;
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.5);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #00ccff, #0099cc);
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 204, 255, 0.6);
+        }
+
+        .btn-start:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #ff0080, #cc0066);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(255, 0, 128, 0.6);
+        }
+
+        .result-display {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            margin-top: 20px;
+            border: 2px solid #00ccff;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result-display.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff0080;
+            text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+        }
+
+        /* 性能优化 */
+        .wheel-section * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .wheel-container {
+                width: 400px;
+                height: 400px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .wheel-container {
+                width: 300px;
+                height: 300px;
+            }
+        }
+
+        /* 动画优化 */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 性能监视器 */
+        .performance-monitor {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #00ff00;
+            display: none;
+        }
+
+        .performance-monitor.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🎯 丝滑抽奖轮盘 🎯</h1>
+        <p style="color: #aaa;">60fps流畅动画 | 物理缓动效果 | 零卡顿</p>
+    </header>
+
+    <div class="main-content">
+        <div class="wheel-section">
+            <div class="wheel-container">
+                <div class="wheel" id="wheel"></div>
+                <div class="pointer">
+                    <svg viewBox="0 0 100 100">
+                        <polygon points="50,10 60,90 40,90" fill="#ff0080"/>
+                        <circle cx="50" cy="50" r="15" fill="#00ccff"/>
+                    </svg>
+                </div>
+            </div>
+            <div style="color: #888; margin-top: 10px; text-align: center;">
+                当前帧率: <span id="fpsCounter">60</span>fps
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="normal">普通模式</button>
+                <button class="mode-btn" data-mode="fast">快速模式</button>
+                <button class="mode-btn" data-mode="slow">慢速模式</button>
+            </div>
+
+            <div style="margin: 20px 0; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span>旋转速度:</span>
+                    <span id="speedValue">中速</span>
+                </div>
+                <input type="range" id="speedSlider" min="1" max="10" value="5" style="width: 100%;">
+            </div>
+
+            <div class="control-buttons">
+                <button class="btn btn-start" id="startBtn">
+                    <span>🎯</span>
+                    开始抽奖
+                </button>
+                <button class="btn btn-reset" id="resetBtn">
+                    <span>🔄</span>
+                    重置
+                </button>
+            </div>
+
+            <div class="result-display" id="resultDisplay">
+                <div style="color: #00ccff; font-size: 20px; margin-bottom: 15px;">🎉 获奖者 🎉</div>
+                <div class="result-name" id="resultName">--</div>
+                <div style="font-size: 22px; color: #00ffcc; margin-top: 10px;" id="resultPrize">--</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==================== 高性能动画引擎 ====================
+    class SmoothWheel {
+        constructor(wheelElement) {
+            this.wheel = wheelElement;
+            this.angle = 0;
+            this.targetAngle = 0;
+            this.velocity = 0;
+            this.isSpinning = false;
+            this.animationId = null;
+            this.lastTime = 0;
+            this.easing = 0.05;
+            this.friction = 0.98;
+
+            // 帧率监控
+            this.frameCount = 0;
+            this.lastFpsUpdate = 0;
+            this.fps = 60;
+
+            // 性能优化
+            this.useTransform3D = true;
+            this.init();
+        }
+
+        init() {
+            this.createSectors();
+            this.startAnimationLoop();
+        }
+
+        createSectors() {
+            const sectors = 12;
+            const colors = [
+                '#FF5252', '#FF4081', '#E040FB', '#7C4DFF',
+                '#536DFE', '#448AFF', '#40C4FF', '#18FFFF',
+                '#69F0AE', '#B2FF59', '#FFFF00', '#FFAB40'
+            ];
+
+            this.wheel.innerHTML = '';
+
+            for (let i = 0; i < sectors; i++) {
+                const sector = document.createElement('div');
+                sector.className = 'sector';
+                sector.style.transform = `rotate(${i * (360 / sectors)}deg)`;
+                sector.style.backgroundColor = colors[i % colors.length];
+
+                const content = document.createElement('div');
+                content.className = 'sector-content';
+                content.textContent = `选手 ${i + 1}`;
+                content.style.color = this.getContrastColor(colors[i % colors.length]);
+
+                sector.appendChild(content);
+                this.wheel.appendChild(sector);
+            }
+        }
+
+        startSpin(speed = 5, duration = 4000, targetIndex = null) {
+            if (this.isSpinning) return;
+
+            this.isSpinning = true;
+            this.velocity = speed * 2;
+
+            // 随机选择目标位置（如果没有指定）
+            if (targetIndex === null) {
+                targetIndex = Math.floor(Math.random() * 12);
+            }
+
+            // 计算目标角度（加上多圈旋转）
+            const sectorAngle = 360 / 12;
+            const targetSectorCenter = (targetIndex * sectorAngle) + (sectorAngle / 2);
+            const extraRotations = 5 + Math.random() * 3; // 5-8圈
+            this.targetAngle = this.angle + (extraRotations * 360) + (360 - targetSectorCenter);
+
+            // 设置减速时间
+            setTimeout(() => {
+                this.startDeceleration();
+            }, duration * 0.7);
+
+            // 完全停止时间
+            setTimeout(() => {
+                this.stopAtTarget();
+            }, duration);
+
+            return targetIndex;
+        }
+
+        startDeceleration() {
+            // 开始减速（使用缓动函数）
+            this.easing = 0.1;
+            this.friction = 0.95;
+        }
+
+        stopAtTarget() {
+            // 精确停止到目标位置
+            this.isSpinning = false;
+            this.velocity = 0;
+
+            // 使用缓动动画精确停止
+            const stopAnimation = () => {
+                const diff = this.targetAngle - this.angle;
+
+                if (Math.abs(diff) > 0.1) {
+                    // 使用弹性缓动
+                    this.angle += diff * 0.1;
+                    this.updateTransform();
+                    requestAnimationFrame(stopAnimation);
+                } else {
+                    this.angle = this.targetAngle % 360;
+                    this.updateTransform();
+                }
+            };
+
+            stopAnimation();
+        }
+
+        updateTransform() {
+            // 使用3D变换提升性能
+            if (this.useTransform3D) {
+                this.wheel.style.transform = `rotate3d(0, 0, 1, ${this.angle}deg)`;
+            } else {
+                this.wheel.style.transform = `rotate(${this.angle}deg)`;
+            }
+        }
+
+        update(currentTime) {
+            if (!this.lastTime) this.lastTime = currentTime;
+
+            // 计算时间增量（deltaTime），确保动画速度与帧率无关
+            const deltaTime = Math.min((currentTime - this.lastTime) / 16.67, 2); // 限制最大delta
+            this.lastTime = currentTime;
+
+            // 更新帧率计数器
+            this.updateFPS(currentTime);
+
+            if (this.isSpinning) {
+                // 物理模拟：速度 + 缓动
+                const diff = this.targetAngle - this.angle;
+                this.velocity += diff * this.easing * deltaTime;
+                this.velocity *= this.friction;
+                this.angle += this.velocity * deltaTime;
+
+                // 角度归一化
+                if (this.angle > 360) {
+                    this.angle %= 360;
+                }
+
+                this.updateTransform();
+            }
+
+            this.animationId = requestAnimationFrame((time) => this.update(time));
+        }
+
+        updateFPS(currentTime) {
+            this.frameCount++;
+
+            if (currentTime - this.lastFpsUpdate >= 1000) {
+                this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastFpsUpdate));
+                this.frameCount = 0;
+                this.lastFpsUpdate = currentTime;
+
+                // 更新FPS显示
+                document.getElementById('fpsCounter').textContent = this.fps;
+
+                // 如果帧率过低，降级到2D变换
+                if (this.fps < 30 && this.useTransform3D) {
+                    this.useTransform3D = false;
+                    console.warn('帧率过低，已降级到2D变换');
+                }
+            }
+        }
+
+        startAnimationLoop() {
+            this.animationId = requestAnimationFrame((time) => this.update(time));
+        }
+
+        stopAnimation() {
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+            }
+        }
+
+        reset() {
+            this.angle = 0;
+            this.targetAngle = 0;
+            this.velocity = 0;
+            this.isSpinning = false;
+            this.updateTransform();
+        }
+
+        getContrastColor(hexcolor) {
+            const r = parseInt(hexcolor.substr(1, 2), 16);
+            const g = parseInt(hexcolor.substr(3, 2), 16);
+            const b = parseInt(hexcolor.substr(5, 2), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? '#000' : '#fff';
+        }
+    }
+
+    // ==================== 应用主逻辑 ====================
+    class LotteryApp {
+        constructor() {
+            this.wheel = new SmoothWheel(document.getElementById('wheel'));
+            this.isRunning = false;
+            this.currentMode = 'normal';
+            this.speed = 5;
+            this.init();
+        }
+
+        init() {
+            this.bindEvents();
+            this.updateSpeedDisplay();
+        }
+
+        bindEvents() {
+            // 开始按钮
+            document.getElementById('startBtn').addEventListener('click', () => this.startLottery());
+
+            // 重置按钮
+            document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+
+            // 速度滑块
+            document.getElementById('speedSlider').addEventListener('input', (e) => {
+                this.speed = parseInt(e.target.value);
+                this.updateSpeedDisplay();
+            });
+
+            // 模式按钮
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    this.currentMode = e.target.dataset.mode;
+                    this.applyModeSettings();
+                });
+            });
+
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && !this.isRunning) {
+                    e.preventDefault();
+                    this.startLottery();
+                }
+                if (e.code === 'Escape') {
+                    this.reset();
+                }
+            });
+
+            // 防止滚动干扰
+            document.addEventListener('wheel', (e) => {
+                if (e.target.id === 'speedSlider') return;
+                e.preventDefault();
+            }, { passive: false });
+        }
+
+        applyModeSettings() {
+            switch(this.currentMode) {
+                case 'fast':
+                    this.speed = 8;
+                    break;
+                case 'slow':
+                    this.speed = 3;
+                    break;
+                default:
+                    this.speed = 5;
+            }
+            document.getElementById('speedSlider').value = this.speed;
+            this.updateSpeedDisplay();
+        }
+
+        updateSpeedDisplay() {
+            const speedText = ['极慢', '很慢', '慢', '较慢', '中速', '较快', '快', '很快', '极快', '超快'][this.speed - 1] || '中速';
+            document.getElementById('speedValue').textContent = speedText;
+        }
+
+        async startLottery() {
+            if (this.isRunning) return;
+
+            this.isRunning = true;
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<span>⏳</span> 抽奖中...';
+
+            // 隐藏上一个结果
+            const resultDisplay = document.getElementById('resultDisplay');
+            resultDisplay.classList.remove('show');
+
+            // 开始旋转
+            const winnerIndex = this.wheel.startSpin(this.speed, 4000 + (this.speed * 200));
+
+            // 等待旋转结束
+            setTimeout(() => {
+                this.showResult(winnerIndex);
+                this.isRunning = false;
+                startBtn.disabled = false;
+                startBtn.innerHTML = '<span>🎯</span> 开始抽奖';
+            }, 4000 + (this.speed * 200));
+        }
+
+        showResult(winnerIndex) {
+            const prizes = [
+                '特等奖：冠军奖杯',
+                '一等奖：高级礼品',
+                '二等奖：精美纪念品',
+                '三等奖：参赛纪念',
+                '幸运奖：神秘礼物',
+                '参与奖：纪念徽章'
+            ];
+
+            const names = [
+                '张三', '李四', '王五', '赵六',
+                '钱七', '孙八', '周九', '吴十',
+                '郑十一', '王十二', '刘十三', '陈十四'
+            ];
+
+            const resultName = document.getElementById('resultName');
+            const resultPrize = document.getElementById('resultPrize');
+            const resultDisplay = document.getElementById('resultDisplay');
+
+            // 随机选择奖项（前几个奖项概率较低）
+            const prizeIndex = Math.floor(Math.random() * prizes.length);
+
+            resultName.textContent = names[winnerIndex];
+            resultPrize.textContent = prizes[prizeIndex];
+
+            // 显示结果（带动画）
+            setTimeout(() => {
+                resultDisplay.classList.add('show');
+            }, 500);
+
+            // 控制台输出
+            console.log(`🎉 抽奖完成！获奖者：${names[winnerIndex]}，奖项：${prizes[prizeIndex]}`);
+
+            // 震动反馈（如果浏览器支持）
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+        }
+
+        reset() {
+            this.wheel.reset();
+            this.isRunning = false;
+
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<span>🎯</span> 开始抽奖';
+
+            const resultDisplay = document.getElementById('resultDisplay');
+            resultDisplay.classList.remove('show');
+
+            console.log('🔄 轮盘已重置');
+        }
+    }
+
+    // ==================== 性能监控 ====================
+    class PerformanceMonitor {
+        constructor() {
+            this.fpsElement = document.getElementById('fpsCounter');
+            this.frameCount = 0;
+            this.lastTime = performance.now();
+            this.startMonitoring();
+        }
+
+        startMonitoring() {
+            requestAnimationFrame(() => this.update());
+        }
+
+        update() {
+            this.frameCount++;
+            const currentTime = performance.now();
+
+            if (currentTime - this.lastTime >= 1000) {
+                const fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastTime));
+                this.fpsElement.textContent = fps;
+
+                // 颜色提示
+                if (fps < 30) {
+                    this.fpsElement.style.color = '#ff5252';
+                } else if (fps < 50) {
+                    this.fpsElement.style.color = '#ffb142';
+                } else {
+                    this.fpsElement.style.color = '#00ff00';
+                }
+
+                this.frameCount = 0;
+                this.lastTime = currentTime;
+            }
+
+            requestAnimationFrame(() => this.update());
+        }
+    }
+
+    // ==================== 初始化应用 ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        // 启动性能监控
+        new PerformanceMonitor();
+
+        // 启动主应用
+        const app = new LotteryApp();
+
+        // 控制台提示
+        console.log('%c🎮 丝滑抽奖轮盘已启动！', 'color: #00ccff; font-size: 16px; font-weight: bold;');
+        console.log('%c快捷键：空格键 - 开始抽奖 | ESC键 - 重置轮盘', 'color: #ff0080;');
+
+        // 检查WebGL支持（用于性能提示）
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (gl) {
+            console.log('✅ WebGL支持：已启用硬件加速');
+        } else {
+            console.log('⚠️ WebGL支持：使用软件渲染');
+        }
+    });
+
+    // ==================== 防止页面滚动 ====================
+    document.body.addEventListener('touchmove', (e) => {
+        if (e.target.id !== 'speedSlider') {
+            e.preventDefault();
+        }
+    }, { passive: false });
+</script>
+</body>
+</html>
