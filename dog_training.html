@@ -619,9 +619,9 @@
 
             this.gameHistory.unshift(gameRecord);
 
-            if (this.gameHistory.length > 8) {
-                this.gameHistory = this.gameHistory.slice(0, 8);
-            }
+            // if (this.gameHistory.length > 8) {
+            //     this.gameHistory = this.gameHistory.slice(0, 8);
+            // }
         }
 
         nextGame() {
@@ -783,10 +783,10 @@
                 <span>${record.timestamp}</span>
             </div>
             <div style="margin-bottom: 4px;">
-                <strong>上场:</strong> ${playersList}
+                <strong style="color: #00aaff">上场:</strong> ${playersList}
             </div>
             <div>
-                <strong>等待:</strong> ${waitingList}
+                <strong style="color: orange">等待:</strong> ${waitingList}
             </div>
         `;
 
