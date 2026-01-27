@@ -532,6 +532,18 @@
             </ul>
             <button class="mode-btn">ENTER</button>
         </div>
+        <div class="mode-card" onclick="selectMode('dog')">
+            <div class="mode-icon">训狗模式</div>
+            <div class="mode-description">内有恶犬，生人勿进</div>
+            <ul class="mode-features">
+                <li>脱敏训练</li>
+                <li>定点上厕所</li>
+                <li>社会化训练</li>
+                <li>卫程豪握手</li>
+                <li>Ricky坐下</li>
+            </ul>
+            <button class="mode-btn">ENTER</button>
+        </div>
 
         <div class="mode-card" onclick="selectMode('guaiwu')">
             <div class="mode-icon">怪物哥专享</div>
@@ -545,17 +557,17 @@
             <button class="mode-btn">ENTER</button>
         </div>
 
-<!--        <div class="mode-card" onclick="selectMode('couple')">-->
-<!--            <div class="mode-icon">cp对战模式</div>-->
-<!--            <div class="mode-description">cp组队 · 淘汰赛</div>-->
-<!--            <ul class="mode-features">-->
-<!--                <li>随机分配心动嘉宾</li>-->
-<!--                <li>世界杯对战模式</li>-->
-<!--                <li>死斗人头决胜</li>-->
-<!--                <li>甜蜜双排</li>-->
-<!--            </ul>-->
-<!--            <button class="mode-btn">ENTER</button>-->
-<!--        </div>-->
+        <!--        <div class="mode-card" onclick="selectMode('couple')">-->
+        <!--            <div class="mode-icon">cp对战模式</div>-->
+        <!--            <div class="mode-description">cp组队 · 淘汰赛</div>-->
+        <!--            <ul class="mode-features">-->
+        <!--                <li>随机分配心动嘉宾</li>-->
+        <!--                <li>世界杯对战模式</li>-->
+        <!--                <li>死斗人头决胜</li>-->
+        <!--                <li>甜蜜双排</li>-->
+        <!--            </ul>-->
+        <!--            <button class="mode-btn">ENTER</button>-->
+        <!--        </div>-->
     </div>
 </div>
 
@@ -627,6 +639,9 @@
                     break;
                 case 'couple':
                     location.href = 'couple_fighting.html';
+                    break;
+                case 'dog':
+                    location.href = 'dog_training.html';
                     break;
                 case 'guaiwu':
                     location.href = 'guaiwu.html';
