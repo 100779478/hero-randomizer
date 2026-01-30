@@ -1,4 +1,5 @@
 window.PRESET_PLAYERS = [
+    {name: '茄子', level: 3, preferredRole: 'any', description: '-'},
     {name: '小 99', level: 3, preferredRole: 'any', description: '将军'},
     {name: '白丶', level: 2, preferredRole: 'any', description: '圣母——永远相信能感化所有人'},
     {name: '嗡嗡叫', level: 2, preferredRole: 'any', description: '男人们的加油站，啊~'},
