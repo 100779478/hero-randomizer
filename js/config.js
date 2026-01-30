@@ -74,6 +74,10 @@ window.PRESET_PLAYERS = [
     {name: 'Hakunamatata', level: 1, preferredRole: 'any', description: '未知'},
     {name: '蓝喵', level: 3, preferredRole: 'any', description: '未知'},
     {name: '今天晚上吃什么', level: 3, preferredRole: 'any', description: '未知'},
+    {name: '落俗', level: 2, preferredRole: 'any', description: '未知'},
+    {name: '再怎么也是个勇者', level: 1, preferredRole: 'any', description: '未知'},
+    {name: '吃了吗', level: 1, preferredRole: 'any', description: '未知'},
+    {name: '山泥若葉睦', level: 2, preferredRole: 'any', description: '未知'},
 ];
 window.DEFAULT_HERO_POOL = [
     'N-无漾', 'N-安娜', 'N-巴蒂斯特', 'N-布丽吉塔', 'N-禅雅塔', 'N-卢西奥', 'N-生命之梭', 'N-天使', 'N-雾子', 'N-伊拉锐', 'N-朱诺', 'N-莫伊拉',
