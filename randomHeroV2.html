@@ -274,7 +274,7 @@
             // 重新渲染玩家选择器
             renderPlayerSelector();
 
-            alert(`玩家 "${name}" 已保存到预设列表！`);
+            document.getElementById('playerNameInput').value = '';
         } else {
             alert('该玩家已在预设列表中！');
         }
