@@ -497,6 +497,18 @@
     </div>
 
     <div class="mode-selection">
+        <div class="mode-card" onclick="selectMode('randomTeamHeroV2')">
+            <div class="mode-icon">全随机模式2.0-Beta</div>
+            <div class="mode-description">更公平、更自由的随机体验</div>
+            <ul class="mode-features">
+                <li>🥬多选位置偏好</li>
+                <li>人员、英雄随机分配</li>
+                <li>实力自动平衡</li>
+                <li>内幕敌对·内幕英雄</li>
+            </ul>
+            <button class="mode-btn">ENTER</button>
+        </div>
+
         <div class="mode-card" onclick="selectMode('randomTeamHero')">
             <div class="mode-icon">全随机模式</div>
             <div class="mode-description">玩家随机分组 · 英雄随机分配</div>
@@ -540,7 +552,6 @@
                 <li>定点上厕所</li>
                 <li>社会化训练</li>
                 <li>卫程豪握手</li>
-                <li>Ricky坐下</li>
             </ul>
             <button class="mode-btn">ENTER</button>
         </div>
@@ -572,7 +583,7 @@
 </div>
 
 <div class="footer">
-     2025 小分队 |
+    2025 小分队 |
     <a href="javascript:void(0)" onclick="openSystemInfo()">小分队成员信息</a>
 </div>
 
@@ -623,31 +634,31 @@
 
     function selectMode(mode) {
         const card = event.currentTarget;
-        const btn = card.querySelector('.mode-btn');
-        btn.innerHTML = '<span style="color:#ff00ff">LOADING...</span>';
+        card.querySelector('.mode-btn');
 
-        setTimeout(() => {
-            switch (mode) {
-                case 'randomTeamHero':
-                    location.href = 'randomHero.html';
-                    break;
-                case 'fixedTeamHero':
-                    location.href = 'fixedTeamHero.html';
-                    break;
-                case 'chaos':
-                    location.href = 'chaos.html';
-                    break;
-                case 'couple':
-                    location.href = 'couple_fighting.html';
-                    break;
-                case 'dog':
-                    location.href = 'dog_training.html';
-                    break;
-                case 'guaiwu':
-                    location.href = 'guaiwu.html';
-                    break;
-            }
-        }, 1000);
+        switch (mode) {
+            case 'randomTeamHeroV2':
+                location.href = 'randomHeroV2.html';
+                break;
+            case 'randomTeamHero':
+                location.href = 'randomHero.html';
+                break;
+            case 'fixedTeamHero':
+                location.href = 'fixedTeamHero.html';
+                break;
+            case 'chaos':
+                location.href = 'chaos.html';
+                break;
+            case 'couple':
+                location.href = 'couple_fighting.html';
+                break;
+            case 'dog':
+                location.href = 'dog_training.html';
+                break;
+            case 'guaiwu':
+                location.href = 'guaiwu.html';
+                break;
+        }
     }
 </script>
 </body>
