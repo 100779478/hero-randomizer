@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { api } from "../services/api";
+import SettingsModal from "../components/SettingsModal.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -11,6 +12,7 @@ const saving = ref(false);
 const errorMessage = ref("");
 const resultModal = ref(null);
 const searchKeyword = ref("");
+const showSettings = ref(false);
 const bootstrap = reactive({
   user: null,
   players: [],
@@ -26,12 +28,6 @@ const manualTeams = reactive({});
 const options = reactive({
   allowRepeatHeroes: true,
   autoAssignHeroes: true,
-});
-const playerForm = reactive({
-  name: "",
-  level: 3,
-  preferredRole: "any",
-  description: "",
 });
 const heroForm = reactive({
   roleCode: "T",
@@ -84,12 +80,7 @@ const filteredPlayers = computed(() => {
     return bootstrap.players;
   }
 
-  return bootstrap.players.filter((player) => {
-    return (
-      player.name.toLowerCase().includes(keyword) ||
-      String(player.description || "").toLowerCase().includes(keyword)
-    );
-  });
+  return bootstrap.players.filter((player) => player.name.toLowerCase().includes(keyword));
 });
 const selectedCountText = computed(() => `已选 ${selectedIds.value.length} 人`);
 const isAdvancedMode = computed(() => route.params.mode === "random-v2");
@@ -107,6 +98,29 @@ function roleLabel(role) {
   );
 }
 
+function normalizeRole(player) {
+  if (player.preferredRole) {
+    return player.preferredRole;
+  }
+
+  if (Array.isArray(player.preferredRoles)) {
+    if (player.preferredRoles.length === 1) {
+      return player.preferredRoles[0];
+    }
+
+    return "any";
+  }
+
+  return "any";
+}
+
+function normalizePlayers(list) {
+  return (list || []).map((player) => ({
+    ...player,
+    preferredRole: normalizeRole(player),
+  }));
+}
+
 function modeLabel(mode) {
   return modeMetaMap[mode]?.title || mode;
 }
@@ -117,12 +131,24 @@ async function loadBootstrap() {
   try {
     const payload = await api.bootstrap();
     bootstrap.user = payload.user;
-    bootstrap.players = payload.players;
+    bootstrap.players = normalizePlayers(payload.players);
     bootstrap.heroes = payload.heroes;
     bootstrap.maps = payload.maps;
     bootstrap.rivals = payload.rivals;
     bootstrap.binds = payload.binds;
     bootstrap.history = payload.history;
+
+    const availableIds = new Set(bootstrap.players.map((player) => player.id));
+    if (selectedIds.value.length) {
+      selectedIds.value = selectedIds.value.filter((id) => availableIds.has(id));
+    }
+
+    Object.keys(manualTeams).forEach((key) => {
+      const id = Number(key);
+      if (!availableIds.has(id) || !selectedIds.value.includes(id)) {
+        delete manualTeams[key];
+      }
+    });
 
     if (!selectedIds.value.length) {
       const defaultCount = route.params.mode === "chaos" ? Math.min(bootstrap.players.length, 8) : Math.min(bootstrap.players.length, 10);
@@ -133,6 +159,10 @@ async function loadBootstrap() {
   } finally {
     loading.value = false;
   }
+}
+
+function openPlayerSettings() {
+  showSettings.value = true;
 }
 
 function togglePlayer(playerId) {
@@ -147,49 +177,6 @@ function togglePlayer(playerId) {
     const teamACount = Object.values(manualTeams).filter((team) => team === "A").length;
     const teamBCount = Object.values(manualTeams).filter((team) => team === "B").length;
     manualTeams[playerId] = teamACount <= teamBCount ? "A" : "B";
-  }
-}
-
-async function addPlayer() {
-  saving.value = true;
-  errorMessage.value = "";
-  try {
-    bootstrap.players = await api.addPlayer(playerForm);
-    playerForm.name = "";
-    playerForm.level = 3;
-    playerForm.preferredRole = "any";
-    playerForm.description = "";
-  } catch (error) {
-    errorMessage.value = error.message;
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function savePlayer(player) {
-  saving.value = true;
-  errorMessage.value = "";
-  try {
-    bootstrap.players = await api.updatePlayer(player.id, player);
-  } catch (error) {
-    errorMessage.value = error.message;
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function removePlayer(playerId) {
-  saving.value = true;
-  errorMessage.value = "";
-  try {
-    bootstrap.players = await api.deletePlayer(playerId);
-    selectedIds.value = selectedIds.value.filter((id) => id !== playerId);
-    delete manualTeams[playerId];
-    await loadBootstrap();
-  } catch (error) {
-    errorMessage.value = error.message;
-  } finally {
-    saving.value = false;
   }
 }
 
@@ -323,6 +310,7 @@ onMounted(loadBootstrap);
 
       <div class="topbar-actions">
         <span class="badge">{{ bootstrap.user?.nickname || bootstrap.user?.username }}</span>
+        <button class="icon-btn" title="全局设置" @click="openPlayerSettings">⚙</button>
         <button class="btn btn-ghost" @click="router.push({ name: 'home' })">返回首页</button>
         <button class="btn btn-secondary" @click="loadBootstrap">刷新</button>
       </div>
@@ -384,29 +372,11 @@ onMounted(loadBootstrap);
         <article class="panel-card">
           <div class="panel-header">
             <div>
-              <div class="panel-title">玩家池</div>
-              <div class="muted">保留原工具的玩家池概念，并支持持久化增删改。</div>
+              <div class="panel-title">玩家选择</div>
+              <div class="muted">玩家维护已移动到全局设置，这里只负责搜索、选人和刷新展示。</div>
             </div>
             <input v-model="searchKeyword" class="input" placeholder="搜索玩家" style="max-width: 220px" />
           </div>
-
-          <div class="form-grid" style="margin-bottom: 16px">
-            <input v-model="playerForm.name" class="input" placeholder="玩家名称" />
-            <select v-model="playerForm.level" class="select">
-              <option :value="4">4</option>
-              <option :value="3">3</option>
-              <option :value="2">2</option>
-              <option :value="1">1</option>
-            </select>
-            <select v-model="playerForm.preferredRole" class="select">
-              <option value="any">任意</option>
-              <option value="T">坦克</option>
-              <option value="C">输出</option>
-              <option value="N">辅助</option>
-            </select>
-            <button class="btn btn-secondary" :disabled="saving" @click="addPlayer">新增玩家</button>
-          </div>
-          <textarea v-model="playerForm.description" class="textarea" placeholder="玩家备注 / 描述"></textarea>
 
           <div class="player-pool" style="margin-top: 16px">
             <div v-for="player in filteredPlayers" :key="player.id" class="player-chip" :class="{ selected: selectedIds.includes(player.id) }">
@@ -414,30 +384,15 @@ onMounted(loadBootstrap);
                 <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
                   <strong>{{ player.name }}</strong>
                   <div class="player-meta">
-                    <span>{{ player.description || '无备注' }}</span>
+                    <span class="badge">等级 {{ player.level }}</span>
+                    <span class="badge" :class="`role-${player.preferredRole}`">{{ roleLabel(player.preferredRole) }}</span>
                   </div>
-                </div>
-                <div class="form-grid" style="margin-top: 10px">
-                  <select v-model="player.level" class="select">
-                    <option :value="4">4</option>
-                    <option :value="3">3</option>
-                    <option :value="2">2</option>
-                    <option :value="1">1</option>
-                  </select>
-                  <select v-model="player.preferredRole" class="select">
-                    <option value="any">任意</option>
-                    <option value="T">坦克</option>
-                    <option value="C">输出</option>
-                    <option value="N">辅助</option>
-                  </select>
                 </div>
               </div>
               <div class="inline-actions">
                 <button class="btn btn-ghost" @click="togglePlayer(player.id)">
                   {{ selectedIds.includes(player.id) ? '移出' : '选中' }}
                 </button>
-                <button class="btn btn-secondary" @click="savePlayer(player)">保存</button>
-                <button class="btn btn-danger" @click="removePlayer(player.id)">删除</button>
               </div>
             </div>
           </div>
@@ -619,5 +574,7 @@ onMounted(loadBootstrap);
         </div>
       </div>
     </div>
+
+    <SettingsModal v-model="showSettings" @updated="loadBootstrap" />
   </div>
 </template>

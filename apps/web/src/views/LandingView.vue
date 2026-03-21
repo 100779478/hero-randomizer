@@ -3,10 +3,11 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "../services/api";
 import { clearSession, session } from "../services/session";
+import SettingsModal from "../components/SettingsModal.vue";
 
 const router = useRouter();
 const loading = ref(true);
-const showSystemInfo = ref(false);
+const showSettings = ref(false);
 const bootstrap = ref({ players: [], heroes: [], maps: [], history: [] });
 
 const modes = [
@@ -81,6 +82,10 @@ function goMode(mode) {
   router.push({ name: "workspace", params: { mode: mode.key } });
 }
 
+function openSettings() {
+  showSettings.value = true;
+}
+
 function logout() {
   clearSession();
   router.push({ name: "login" });
@@ -102,7 +107,7 @@ onMounted(loadBootstrap);
 
       <div class="topbar-actions">
         <span class="badge">{{ session.user?.nickname || session.user?.username }}</span>
-        <button class="btn btn-ghost" @click="showSystemInfo = true">成员档案</button>
+        <button class="icon-btn" title="全局设置" @click="openSettings">⚙</button>
         <button class="btn btn-secondary" @click="loadBootstrap">刷新数据</button>
         <button class="btn btn-danger" @click="logout">退出登录</button>
       </div>
@@ -142,29 +147,6 @@ onMounted(loadBootstrap);
       </article>
     </section>
 
-    <div v-if="showSystemInfo" class="modal-mask" @click.self="showSystemInfo = false">
-      <div class="glass-card modal-panel">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">成员档案</div>
-            <div class="muted">这里展示当前账号可用的玩家池。</div>
-          </div>
-          <button class="btn btn-danger" @click="showSystemInfo = false">关闭</button>
-        </div>
-
-        <div class="player-pool">
-          <div v-for="player in bootstrap.players" :key="player.id" class="player-chip">
-            <div>
-              <div style="font-weight: 800">{{ player.name }}</div>
-              <div class="player-meta">
-                <span class="badge">等级 {{ player.level }}</span>
-                <span class="badge" :class="`role-${player.preferredRole}`">{{ player.preferredRole }}</span>
-                <span v-if="player.description">{{ player.description }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <SettingsModal v-model="showSettings" @updated="loadBootstrap" />
   </div>
 </template>

@@ -1,5 +1,6 @@
 ﻿const { createApp, reactive, ref, computed, onMounted } = Vue;
 const { createRouter, createWebHistory, useRoute, useRouter } = VueRouter;
+const watch = Vue.watch;
 
 const STORAGE_KEY = "hero-randomizer-session";
 const ROLE_ORDER = { T: 1, C: 2, N: 3 };
@@ -234,18 +235,266 @@ const RegisterView = {
     </div>
   `,
 };
+
+const SettingsModal = {
+  props: {
+    modelValue: { type: Boolean, default: false },
+  },
+  emits: ["update:modelValue", "updated"],
+  setup(props, { emit }) {
+    const loading = ref(false);
+    const saving = ref(false);
+    const errorMessage = ref("");
+    const activeTab = ref("players");
+    const searchKeyword = ref("");
+    const players = ref([]);
+    const summary = reactive({ playerCount: 0, heroCount: 0, mapCount: 0, historyCount: 0 });
+    const playerForm = reactive({ name: "", level: 3, preferredRoles: ["T", "C", "N"] });
+
+    const filteredPlayers = computed(() => {
+      const keyword = searchKeyword.value.trim().toLowerCase();
+      return players.value.filter((player) => !keyword || player.name.toLowerCase().includes(keyword));
+    });
+
+    function closeModal() {
+      emit("update:modelValue", false);
+    }
+
+    function toggleNewPlayerRole(role) {
+      const current = normalizePreferredRoles(playerForm.preferredRoles);
+      if (current.includes(role)) {
+        if (current.length === 1) return alert("至少保留一个位置偏好");
+        playerForm.preferredRoles = current.filter((item) => item !== role);
+        return;
+      }
+      playerForm.preferredRoles = current.concat(role);
+    }
+
+    function toggleExistingPlayerRole(player, role) {
+      const current = normalizePreferredRoles(player.preferredRoles);
+      if (current.includes(role)) {
+        if (current.length === 1) return alert("至少保留一个位置偏好");
+        player.preferredRoles = current.filter((item) => item !== role);
+        return;
+      }
+      player.preferredRoles = current.concat(role);
+    }
+
+    async function loadSettings() {
+      loading.value = true;
+      errorMessage.value = "";
+      try {
+        const payload = await api.bootstrap();
+        players.value = (payload.players || []).map(decoratePlayer);
+        summary.playerCount = (payload.players || []).length;
+        summary.heroCount = (payload.heroes || []).length;
+        summary.mapCount = (payload.maps || []).length;
+        summary.historyCount = (payload.history || []).length;
+      } catch (error) {
+        errorMessage.value = error.message;
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    async function syncAfterMutation() {
+      await loadSettings();
+      emit("updated");
+    }
+
+    async function addPlayer() {
+      const name = playerForm.name.trim();
+      if (!name) return alert("请输入玩家名称");
+      saving.value = true;
+      errorMessage.value = "";
+      try {
+        await api.addPlayer({
+          name,
+          level: Number(playerForm.level) || 1,
+          preferredRoles: normalizePreferredRoles(playerForm.preferredRoles),
+        });
+        playerForm.name = "";
+        playerForm.level = 3;
+        playerForm.preferredRoles = ["T", "C", "N"];
+        await syncAfterMutation();
+      } catch (error) {
+        errorMessage.value = error.message;
+      } finally {
+        saving.value = false;
+      }
+    }
+
+    async function savePlayer(player) {
+      const name = String(player.name || "").trim();
+      if (!name) return alert("请输入玩家名称");
+      saving.value = true;
+      errorMessage.value = "";
+      try {
+        await api.updatePlayer(player.id, {
+          name,
+          level: Number(player.level) || 1,
+          preferredRoles: normalizePreferredRoles(player.preferredRoles),
+        });
+        await syncAfterMutation();
+      } catch (error) {
+        errorMessage.value = error.message;
+      } finally {
+        saving.value = false;
+      }
+    }
+
+    async function removePlayer(id) {
+      saving.value = true;
+      errorMessage.value = "";
+      try {
+        await api.deletePlayer(id);
+        await syncAfterMutation();
+      } catch (error) {
+        errorMessage.value = error.message;
+      } finally {
+        saving.value = false;
+      }
+    }
+
+    watch(
+      () => props.modelValue,
+      (visible) => {
+        if (!visible) return;
+        activeTab.value = "players";
+        searchKeyword.value = "";
+        loadSettings();
+      },
+    );
+
+    return {
+      session,
+      loading,
+      saving,
+      errorMessage,
+      activeTab,
+      searchKeyword,
+      players,
+      filteredPlayers,
+      summary,
+      playerForm,
+      preferredRolesText,
+      closeModal,
+      toggleNewPlayerRole,
+      toggleExistingPlayerRole,
+      loadSettings,
+      addPlayer,
+      savePlayer,
+      removePlayer,
+    };
+  },
+  template: `
+    <div v-if="modelValue" class="settings-overlay" @click.self="closeModal">
+      <div class="settings-panel">
+        <div class="settings-header">
+          <div>
+            <div class="settings-title">全局设置</div>
+            <div class="settings-subtitle">用一个入口统一维护玩家池，修改后会重新获取列表并刷新界面。</div>
+          </div>
+          <div class="settings-actions">
+            <span class="settings-user">{{ session.user?.nickname || session.user?.username }}</span>
+            <button class="small-btn btn-green" type="button" :disabled="loading || saving" @click="loadSettings">刷新</button>
+            <button class="small-btn btn-red" type="button" @click="closeModal">关闭</button>
+          </div>
+        </div>
+
+        <div class="settings-tabs">
+          <button class="settings-tab" :class="{ active: activeTab === 'players' }" type="button" @click="activeTab = 'players'">玩家池</button>
+          <button class="settings-tab" :class="{ active: activeTab === 'overview' }" type="button" @click="activeTab = 'overview'">概览</button>
+        </div>
+
+        <div v-if="errorMessage" class="settings-error">{{ errorMessage }}</div>
+
+        <template v-if="activeTab === 'players'">
+          <div class="settings-create-card">
+            <div class="settings-toolbar">
+              <input v-model="playerForm.name" class="legacy-input settings-name-input" placeholder="玩家名称">
+              <select v-model="playerForm.level" class="legacy-select settings-level-select">
+                <option :value="4">⭐⭐⭐⭐</option>
+                <option :value="3">⭐⭐⭐</option>
+                <option :value="2">⭐⭐</option>
+                <option :value="1">⭐</option>
+              </select>
+              <button class="small-btn" type="button" :disabled="saving" @click="addPlayer">{{ saving ? '处理中...' : '新增玩家' }}</button>
+            </div>
+            <div class="role-picker-row settings-role-picker">
+              <span class="role-picker-label">位置偏好：</span>
+              <button type="button" class="role-option-btn" :class="{ selected: playerForm.preferredRoles.includes('T') }" @click="toggleNewPlayerRole('T')">T</button>
+              <button type="button" class="role-option-btn" :class="{ selected: playerForm.preferredRoles.includes('C') }" @click="toggleNewPlayerRole('C')">C</button>
+              <button type="button" class="role-option-btn" :class="{ selected: playerForm.preferredRoles.includes('N') }" @click="toggleNewPlayerRole('N')">N</button>
+            </div>
+          </div>
+          <div class="settings-search-row">
+            <input v-model="searchKeyword" class="legacy-input full-width" placeholder="搜索玩家">
+          </div>
+          <div class="settings-player-list">
+            <div v-for="player in filteredPlayers" :key="player.id" class="settings-player-card">
+              <div class="settings-player-head">
+                <input v-model="player.name" class="legacy-input full-width" placeholder="玩家名称">
+                <select v-model="player.level" class="legacy-select settings-level-select settings-card-level">
+                  <option :value="4">⭐⭐⭐⭐</option>
+                  <option :value="3">⭐⭐⭐</option>
+                  <option :value="2">⭐⭐</option>
+                  <option :value="1">⭐</option>
+                </select>
+              </div>
+              <div class="settings-player-role-row">
+                <div class="settings-player-meta">
+                  <span class="settings-preferred">{{ preferredRolesText(player.preferredRoles) }}</span>
+                </div>
+                <div class="role-selector settings-card-role-selector">
+                  <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('T') }" @click="toggleExistingPlayerRole(player, 'T')">T</button>
+                  <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('C') }" @click="toggleExistingPlayerRole(player, 'C')">C</button>
+                  <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('N') }" @click="toggleExistingPlayerRole(player, 'N')">N</button>
+                </div>
+              </div>
+              <div class="settings-player-actions">
+                <button class="small-btn btn-green" type="button" :disabled="saving" @click="savePlayer(player)">保存</button>
+                <button class="small-btn btn-red" type="button" :disabled="saving" @click="removePlayer(player.id)">删除</button>
+              </div>
+            </div>
+            <div v-if="loading" class="empty-state">正在加载玩家列表...</div>
+            <div v-else-if="!filteredPlayers.length" class="empty-state">没有匹配的玩家</div>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="settings-overview-grid">
+            <div class="settings-overview-card"><div class="settings-overview-label">玩家池</div><div class="settings-overview-value">{{ summary.playerCount }}</div></div>
+            <div class="settings-overview-card"><div class="settings-overview-label">英雄池</div><div class="settings-overview-value">{{ summary.heroCount }}</div></div>
+            <div class="settings-overview-card"><div class="settings-overview-label">地图池</div><div class="settings-overview-value">{{ summary.mapCount }}</div></div>
+            <div class="settings-overview-card"><div class="settings-overview-label">最近记录</div><div class="settings-overview-value">{{ summary.historyCount }}</div></div>
+          </div>
+          <div class="settings-hint-card">
+            玩家在这里新增、删除或改名后，工作台会重新拉取列表。
+            当前已经不存在的玩家会自动从已选列表里清掉，避免页面状态不一致。
+          </div>
+        </template>
+      </div>
+    </div>
+  `,
+};
+
 const LandingView = {
+  components: { SettingsModal },
   setup() {
     const router = useRouter();
+    const showSettings = ref(false);
     function goMode(mode) { router.push(mode.fun ? `/fun/${mode.key}` : `/mode/${mode.key}`); }
+    function openSettings() { showSettings.value = true; }
     function logout() { clearSession(); router.push("/login"); }
-    return { session, goMode, logout, cards: MODE_CARDS };
+    return { session, showSettings, goMode, openSettings, logout, cards: MODE_CARDS };
   },
   template: `
     <div class="home-page">
       <div class="home-shell home-shell-legacy">
         <div class="home-userbar legacy-userbar">
           <button type="button">{{ session.user?.nickname || session.user?.username }}</button>
+          <button type="button" class="settings-gear-btn" @click="openSettings" aria-label="打开全局设置">⚙</button>
           <button type="button" @click="logout">退出登录</button>
         </div>
         <div class="home-header">
@@ -264,6 +513,7 @@ const LandingView = {
             <button class="mode-btn" type="button">ENTER</button>
           </div>
         </div>
+        <SettingsModal v-model="showSettings" />
       </div>
       <div class="home-footer">2026 小分队</div>
     </div>
@@ -729,6 +979,7 @@ function workspaceSetup() {
   const randomHero = ref(true);
   const selectedIds = ref([]);
   const showRivalModal = ref(false);
+  const showSettings = ref(false);
   const rivalForm = reactive({ player1Id: "", player2Id: "" });
   const bindForm = reactive({ playerId: "", heroId: "" });
   const resultModal = ref(null);
@@ -739,8 +990,6 @@ function workspaceSetup() {
   const manualTeams = reactive({});
 
   const chaosSearch = ref("");
-  const chaosLevel = ref(2);
-  const chaosCustomPlayers = ref([]);
   const chaosSelectedNames = ref([]);
   const chaosTeamSize = ref(6);
   const chaosLoading = ref(false);
@@ -778,11 +1027,9 @@ function workspaceSetup() {
       .filter((player) => !keyword || player.name.toLowerCase().includes(keyword));
   });
 
-  const allChaosPlayers = computed(() => bootstrap.chaosPlayers.concat(chaosCustomPlayers.value));
-
   const chaosPlayers = computed(() => {
     const keyword = chaosSearch.value.trim().toLowerCase();
-    return allChaosPlayers.value.filter((player) => !keyword || player.name.toLowerCase().includes(keyword));
+    return bootstrap.chaosPlayers.filter((player) => !keyword || player.name.toLowerCase().includes(keyword));
   });
 
   async function loadBootstrap() {
@@ -795,7 +1042,13 @@ function workspaceSetup() {
     bootstrap.rivals = payload.rivals || [];
     bootstrap.binds = payload.binds || [];
     bootstrap.history = payload.history || [];
-    const allowedNames = new Set(allChaosPlayers.value.map((player) => player.name));
+    const availablePlayerIds = new Set(bootstrap.players.map((player) => player.id));
+    selectedIds.value = selectedIds.value.filter((id) => availablePlayerIds.has(id));
+    Object.keys(manualTeams).forEach((key) => {
+      const id = Number(key);
+      if (!availablePlayerIds.has(id)) delete manualTeams[key];
+    });
+    const allowedNames = new Set(bootstrap.chaosPlayers.map((player) => player.name));
     chaosSelectedNames.value = chaosSelectedNames.value.filter((name) => allowedNames.has(name));
   }
 
@@ -837,19 +1090,6 @@ function workspaceSetup() {
     fixedNameInput.value = "";
     fixedLevel.value = 3;
     await loadBootstrap();
-  }
-
-  function createChaosPlayer() {
-    const name = chaosSearch.value.trim();
-    if (!name) return alert("请输入玩家名称");
-    if (allChaosPlayers.value.some((player) => player.name === name)) return alert("该玩家已存在");
-    chaosCustomPlayers.value = chaosCustomPlayers.value.concat({
-      id: `custom-${Date.now()}-${chaosCustomPlayers.value.length + 1}`,
-      name,
-      level: Number(chaosLevel.value) || 1,
-      preferredRoles: ["T", "C", "N"],
-    });
-    chaosSearch.value = "";
   }
 
   async function removePlayer(id) {
@@ -1066,7 +1306,7 @@ function workspaceSetup() {
     setTimeout(() => {
       const teamSize = Number(chaosTeamSize.value);
       const selectedPlayersList = chaosSelectedNames.value
-        .map((name) => allChaosPlayers.value.find((player) => player.name === name))
+        .map((name) => bootstrap.chaosPlayers.find((player) => player.name === name))
         .filter(Boolean)
         .map((player) => ({ name: player.name, level: Number(player.level) || 1 }));
 
@@ -1109,6 +1349,10 @@ function workspaceSetup() {
     chaosLoading.value = false;
   }
 
+  function openSettings() {
+    showSettings.value = true;
+  }
+
   function logout() {
     clearSession();
     router.push("/login");
@@ -1120,18 +1364,23 @@ function workspaceSetup() {
     session, router, bootstrap, modeKey, isRandomMode, isAdvancedMode, isFixedMode, isChaosMode, pageTitle,
     randomPlayerForm, randomSearch, heroInput, mapInput, allowRepeat, randomHero, selectedIds,
     selectedPlayers, availableRandomPlayers, showRivalModal, rivalForm, bindForm, resultModal, rollText,
+    showSettings,
     fixedNameInput, fixedLevel, manualTeams, fixedTeamA, fixedTeamB, fixedAvailablePlayers,
-    chaosSearch, chaosLevel, allChaosPlayers, chaosSelectedNames, chaosTeamSize, chaosPlayers, chaosLoading, chaosResult,
+    chaosSearch, chaosSelectedNames, chaosTeamSize, chaosPlayers, chaosLoading, chaosResult,
     roleLabel, roleEmoji, preferredRolesText, preferredRolesEmoji, heroDisplay, sortedTeam,
-    togglePlayerRole, createRandomPlayer, createFixedPlayer, createChaosPlayer, removePlayer,
+    togglePlayerRole, createRandomPlayer, createFixedPlayer, removePlayer,
     addHero, resetHeroes, removeHero, addMap, removeMap, addSelectedPlayer, removeSelectedPlayer,
     addRival, removeRival, addBind, removeBind, startRandomDraw, assignToTeam, removeFromTeam,
-    clearTeams, startFixedDraw, toggleChaos, clearChaosSelection, startChaosBalance, closeResult, logout,
+    clearTeams, startFixedDraw, toggleChaos, clearChaosSelection, startChaosBalance, closeResult, loadBootstrap, openSettings, logout,
   };
 }
 const workspaceTemplate = `
   <div :class="['legacy-page', isChaosMode ? 'chaos-theme' : '', isFixedMode ? 'fixed-theme' : '']">
     <button class="back-home-btn" type="button" @click="router.push('/home')">返回首页</button>
+    <div class="workspace-top-actions">
+      <div class="workspace-user-pill">{{ session.user?.nickname || session.user?.username }}</div>
+      <button class="settings-gear-btn workspace-gear-btn" type="button" @click="openSettings" aria-label="打开全局设置">⚙</button>
+    </div>
 
     <template v-if="isRandomMode">
       <div class="legacy-container random-page-shell">
@@ -1160,36 +1409,17 @@ const workspaceTemplate = `
 
         <div class="player-management">
           <div class="mode-selector"><div class="random-section-title">玩家列表</div></div>
-          <div class="toolbar-row">
-            <input v-model="randomPlayerForm.name" class="legacy-input player-input" placeholder="玩家名称">
-            <select v-model="randomPlayerForm.level" class="legacy-select">
-              <option :value="4">⭐⭐⭐⭐</option>
-              <option :value="3">⭐⭐⭐</option>
-              <option :value="2">⭐⭐</option>
-              <option :value="1">⭐</option>
-            </select>
-            <button class="small-btn" type="button" @click="createRandomPlayer(true)">添加玩家</button>
-            <button class="small-btn btn-green" type="button" @click="createRandomPlayer(false)">保存为预设</button>
-          </div>
-          <div class="role-picker-row">
-            <span class="role-picker-label">位置偏好：</span>
-            <button type="button" class="role-option-btn" :class="{ selected: randomPlayerForm.preferredRoles.includes('T') }" @click="randomPlayerForm.preferredRoles = randomPlayerForm.preferredRoles.includes('T') ? randomPlayerForm.preferredRoles.filter((role) => role !== 'T') : randomPlayerForm.preferredRoles.concat('T')">T</button>
-            <button type="button" class="role-option-btn" :class="{ selected: randomPlayerForm.preferredRoles.includes('C') }" @click="randomPlayerForm.preferredRoles = randomPlayerForm.preferredRoles.includes('C') ? randomPlayerForm.preferredRoles.filter((role) => role !== 'C') : randomPlayerForm.preferredRoles.concat('C')">C</button>
-            <button type="button" class="role-option-btn" :class="{ selected: randomPlayerForm.preferredRoles.includes('N') }" @click="randomPlayerForm.preferredRoles = randomPlayerForm.preferredRoles.includes('N') ? randomPlayerForm.preferredRoles.filter((role) => role !== 'N') : randomPlayerForm.preferredRoles.concat('N')">N</button>
-          </div>
-
           <div class="random-page-grid">
             <div class="random-left-pane">
               <input v-model="randomSearch" class="legacy-input full-width" placeholder="搜索玩家">
               <div class="player-selector">
-                <div v-for="player in availableRandomPlayers" :key="player.id" class="player-option">
-                  <div class="player-option-name" @click="addSelectedPlayer(player.id)">{{ player.name }}</div>
-                  <div class="role-selector">
+                <div v-for="player in availableRandomPlayers" :key="player.id" class="player-option random-player-card" @click="addSelectedPlayer(player.id)">
+                  <div class="player-option-name">{{ player.name }}</div>
+                  <div class="role-selector compact">
                     <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('T') }" @click.stop="togglePlayerRole(player, 'T')">T</button>
                     <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('C') }" @click.stop="togglePlayerRole(player, 'C')">C</button>
                     <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('N') }" @click.stop="togglePlayerRole(player, 'N')">N</button>
                   </div>
-                  <div class="player-option-meta">{{ preferredRolesEmoji(player.preferredRoles) }}</div>
                 </div>
                 <div v-if="!availableRandomPlayers.length" class="empty-state">没有可添加的玩家</div>
               </div>
@@ -1200,7 +1430,8 @@ const workspaceTemplate = `
                 <button class="small-btn btn-red" type="button" @click="selectedIds = []">清空</button>
               </div>
               <div class="player-list">
-                <div v-for="player in selectedPlayers" :key="player.id" class="player-item player-item-rich">
+                <div v-for="player in selectedPlayers" :key="player.id" class="player-item player-item-rich random-selected-card">
+                  <button class="remove-btn selected-remove-btn" type="button" @click="removeSelectedPlayer(player.id)" aria-label="移除玩家"><span class="icon-close" aria-hidden="true"></span></button>
                   <div class="player-main">
                     <span class="name">{{ player.name }}</span>
                   </div>
@@ -1209,7 +1440,6 @@ const workspaceTemplate = `
                     <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('C') }" @click.stop="togglePlayerRole(player, 'C')">C</button>
                     <button type="button" class="role-option-btn" :class="{ selected: player.preferredRoles.includes('N') }" @click.stop="togglePlayerRole(player, 'N')">N</button>
                   </div>
-                  <button class="remove-btn" type="button" @click="removeSelectedPlayer(player.id)" aria-label="移除玩家"><span class="icon-close" aria-hidden="true"></span></button>
                 </div>
                 <div v-if="!selectedPlayers.length" class="empty-state">暂未选择玩家</div>
               </div>
@@ -1288,7 +1518,6 @@ const workspaceTemplate = `
           </div>
           <div class="player-grid">
             <div v-for="player in fixedAvailablePlayers" :key="player.id" class="player-card">
-              <button class="btn-del" type="button" @click="removePlayer(player.id)">x</button>
               <div class="player-name">{{ player.name }}</div>
               <div class="player-actions">
                 <button class="btn-a" type="button" @click="assignToTeam(player.id, 'A')">A队</button>
@@ -1332,13 +1561,11 @@ const workspaceTemplate = `
         <div class="selected-info">已选中 <span>{{ chaosSelectedNames.length }}</span> 人</div>
         <div class="player-card chaos-player-card">
           <div class="search-add">
-            <input v-model="chaosSearch" type="text" placeholder="搜索或输入新玩家名字...">
-            <select v-model="chaosLevel"><option :value="1">⭐</option><option :value="2">⭐⭐</option><option :value="3">⭐⭐⭐</option><option :value="4">⭐⭐⭐⭐</option></select>
-            <button class="btn-small" type="button" @click="createChaosPlayer">添加</button>
+            <input v-model="chaosSearch" type="text" placeholder="搜索玩家...">
           </div>
           <div class="player-grid chaos-grid">
             <div v-for="player in chaosPlayers" :key="player.name" class="player-item chaos-player-item" :class="{ selected: chaosSelectedNames.includes(player.name) }" @click="toggleChaos(player.name)">{{ player.name }}</div>
-            <div v-if="!chaosPlayers.length" class="empty-state">{{ allChaosPlayers.length ? '没有匹配的玩家' : '暂无预设玩家' }}</div>
+            <div v-if="!chaosPlayers.length" class="empty-state">{{ bootstrap.chaosPlayers.length ? '没有匹配的玩家' : '暂无预设玩家' }}</div>
           </div>
         </div>
       </div>
@@ -1395,10 +1622,12 @@ const workspaceTemplate = `
         <div class="modal-buttons"><button class="btn-big" type="button" @click="closeResult">关闭</button><button class="btn-big chaos-restart-btn" type="button" @click="startChaosBalance">重新分队</button></div>
       </div>
     </div>
+
+    <SettingsModal v-model="showSettings" @updated="loadBootstrap" />
   </div>
 `;
 
-const WorkspaceView = { setup: workspaceSetup, template: workspaceTemplate };
+const WorkspaceView = { components: { SettingsModal }, setup: workspaceSetup, template: workspaceTemplate };
 const routes = [
   { path: '/login', component: LoginView },
   { path: '/register', component: RegisterView },

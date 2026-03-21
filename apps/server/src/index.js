@@ -91,6 +91,7 @@ function decoratePlayer(row) {
     id: row.id,
     name: row.name,
     level: Number(row.level) || 1,
+    preferredRole: serializePreferredRoles(preferredRoles),
     preferredRoles,
     createdAt: row.createdAt || row.created_at,
   };
@@ -141,13 +142,20 @@ app.use(async (ctx, next) => {
   const vendorFile = vendorFiles[ctx.path];
   if (vendorFile && fs.existsSync(vendorFile)) {
     ctx.set("Content-Type", contentType(vendorFile));
+    ctx.set("Cache-Control", "no-store");
     ctx.body = fs.readFileSync(vendorFile);
     return;
   }
-  const isAppRoute = ctx.path === "/" || ctx.path === "/home" || ctx.path === "/login" || ctx.path.startsWith("/mode/") || ctx.path.startsWith("/fun/");
+  const isAppRoute =
+    ctx.path === "/" ||
+    ctx.path === "/home" ||
+    ctx.path === "/login" ||
+    ctx.path.startsWith("/mode/") ||
+    ctx.path.startsWith("/fun/");
   const targetFile = isAppRoute ? path.join(webRoot, "index.html") : path.join(webRoot, ctx.path.replace(/^\//, ""));
   if (fs.existsSync(targetFile) && fs.statSync(targetFile).isFile()) {
     ctx.set("Content-Type", contentType(targetFile));
+    ctx.set("Cache-Control", "no-store");
     ctx.body = fs.readFileSync(targetFile);
     return;
   }
