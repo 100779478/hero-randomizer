@@ -1,0 +1,16 @@
+﻿{
+  "name": "hero-randomizer-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "deep-equal": "file:../../packages/deep-equal",
+    "koa": "^2.15.3",
+    "koa-bodyparser": "^4.4.1"
+  }
+}

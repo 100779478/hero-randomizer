@@ -1,0 +1,16 @@
+﻿{
+  "name": "hero-randomizer-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/web",
+    "apps/server",
+    "packages/deep-equal"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/server",
+    "dev:server": "npm run dev --workspace apps/server",
+    "dev:web": "node -e \"console.log('Web is served by Koa at http://localhost:3000')\"",
+    "start": "npm run start --workspace apps/server"
+  }
+}
