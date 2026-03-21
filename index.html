@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>OW内战工具 - 赛博模式选择</title>
+    <title>OW鍐呮垬宸ュ叿 - 璧涘崥妯″紡閫夋嫨</title>
     <link rel="icon"
-          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍆</text></svg>">
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>馃崋</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
 
     <style>
@@ -40,7 +40,7 @@
             padding: 20px 0;
         }
 
-        /* 赛博网格背景 */
+        /* 璧涘崥缃戞牸鑳屾櫙 */
         body::before {
             content: '';
             position: fixed;
@@ -62,7 +62,7 @@
             }
         }
 
-        /* 扫描线 */
+        /* 鎵弿绾?*/
         body::after {
             content: '';
             position: fixed;
@@ -327,7 +327,7 @@
             width: 100%;
         }
 
-        /* 响应式 */
+        /* 鍝嶅簲寮?*/
         @media (max-width: 1200px) {
             .mode-selection {
                 grid-template-columns: repeat(2, 1fr);
@@ -352,7 +352,7 @@
             }
         }
 
-        /* ===================== 超大无滚动弹窗 ===================== */
+        /* ===================== 瓒呭ぇ鏃犳粴鍔ㄥ脊绐?===================== */
         .cyber-modal {
             position: fixed;
             inset: 0;
@@ -491,147 +491,76 @@
 
 <div class="container">
     <div class="header">
-        <div class="logo">这特么是小分队</div>
+        <div class="logo">杩欑壒涔堟槸灏忓垎闃?/div>
         <h1>OW INNER WAR</h1>
-        <p class="subtitle">选择命运 · 进入战场</p>
+        <p class="subtitle">閫夋嫨鍛借繍 路 杩涘叆鎴樺満</p>
     </div>
 
     <div class="mode-selection">
         <div class="mode-card" onclick="selectMode('randomTeamHeroV2')">
-            <div class="mode-icon">全随机模式2.0-Beta</div>
-            <div class="mode-description">更公平、更自由的随机体验</div>
+            <div class="mode-icon">鍏ㄩ殢鏈烘ā寮?.0-Beta</div>
+            <div class="mode-description">鏇村叕骞炽€佹洿鑷敱鐨勯殢鏈轰綋楠?/div>
             <ul class="mode-features">
-                <li>🥬多选位置偏好</li>
-                <li>人员、英雄随机分配</li>
-                <li>实力自动平衡</li>
-                <li>内幕敌对·内幕英雄</li>
-            </ul>
-            <button class="mode-btn">ENTER</button>
-        </div>
-
-        <div class="mode-card" onclick="selectMode('randomTeamHero')">
-            <div class="mode-icon">全随机模式</div>
-            <div class="mode-description">玩家随机分组 · 英雄随机分配</div>
-            <ul class="mode-features">
-                <li>人员随机分组</li>
-                <li>英雄随机分配</li>
-                <li>实力自动平衡</li>
-                <li>内幕敌对·内幕英雄</li>
+                <li>馃ガ澶氶€変綅缃亸濂?/li>
+                <li>浜哄憳銆佽嫳闆勯殢鏈哄垎閰?/li>
+                <li>瀹炲姏鑷姩骞宠　</li>
+                <li>鍐呭箷鏁屽路鍐呭箷鑻遍泟</li>
             </ul>
             <button class="mode-btn">ENTER</button>
         </div>
 
         <div class="mode-card" onclick="selectMode('fixedTeamHero')">
-            <div class="mode-icon">自选模式</div>
-            <div class="mode-description">队伍自选 · 仅随机英雄</div>
+            <div class="mode-icon">鑷€夋ā寮?/div>
+            <div class="mode-description">闃熶紞鑷€?路 浠呴殢鏈鸿嫳闆?/div>
             <ul class="mode-features">
-                <li>支持自定义玩家</li>
-                <li>英雄随机分配</li>
-                <li>保留原有队伍</li>
-                <li>无内幕纯绿色</li>
+                <li>鏀寔鑷畾涔夌帺瀹?/li>
+                <li>鑻遍泟闅忔満鍒嗛厤</li>
+                <li>淇濈暀鍘熸湁闃熶紞</li>
+                <li>鏃犲唴骞曠函缁胯壊</li>
             </ul>
             <button class="mode-btn">ENTER</button>
         </div>
 
         <div class="mode-card" onclick="selectMode('chaos')">
-            <div class="mode-icon">大乱炖模式</div>
-            <div class="mode-description">多人运动 · 自动多组分配</div>
+            <div class="mode-icon">澶т贡鐐栨ā寮?/div>
+            <div class="mode-description">澶氫汉杩愬姩 路 鑷姩澶氱粍鍒嗛厤</div>
             <ul class="mode-features">
-                <li>多人运动神器</li>
-                <li>均衡队伍实力</li>
-                <li>闲人落位观众</li>
-                <li>适合大乱炖</li>
+                <li>澶氫汉杩愬姩绁炲櫒</li>
+                <li>鍧囪　闃熶紞瀹炲姏</li>
+                <li>闂蹭汉钀戒綅瑙備紬</li>
+                <li>閫傚悎澶т贡鐐?/li>
             </ul>
             <button class="mode-btn">ENTER</button>
         </div>
         <div class="mode-card" onclick="selectMode('dog')">
-            <div class="mode-icon">训狗模式</div>
-            <div class="mode-description">内有恶犬，生人勿进</div>
+            <div class="mode-icon">璁嫍妯″紡</div>
+            <div class="mode-description">鍐呮湁鎭剁姮锛岀敓浜哄嬁杩?/div>
             <ul class="mode-features">
-                <li>脱敏训练</li>
-                <li>定点上厕所</li>
-                <li>社会化训练</li>
-                <li>卫程豪握手</li>
-            </ul>
-            <button class="mode-btn">ENTER</button>
-        </div>
-
-        <div class="mode-card" onclick="selectMode('guaiwu')">
-            <div class="mode-icon">怪物哥专享</div>
-            <div class="mode-description">一切为怪物哥服务</div>
-            <ul class="mode-features">
-                <li>理解怪物哥</li>
-                <li>成为怪物哥</li>
-                <li>超越怪物哥</li>
-                <li>怪物哥YYDS</li>
+                <li>鑴辨晱璁粌</li>
+                <li>瀹氱偣涓婂帟鎵€</li>
+                <li>绀句細鍖栬缁?/li>
+                <li>鍗▼璞彙鎵?/li>
             </ul>
             <button class="mode-btn">ENTER</button>
         </div>
 
         <!--        <div class="mode-card" onclick="selectMode('couple')">-->
-        <!--            <div class="mode-icon">cp对战模式</div>-->
-        <!--            <div class="mode-description">cp组队 · 淘汰赛</div>-->
+        <!--            <div class="mode-icon">cp瀵规垬妯″紡</div>-->
+        <!--            <div class="mode-description">cp缁勯槦 路 娣樻卑璧?/div>-->
         <!--            <ul class="mode-features">-->
-        <!--                <li>随机分配心动嘉宾</li>-->
-        <!--                <li>世界杯对战模式</li>-->
-        <!--                <li>死斗人头决胜</li>-->
-        <!--                <li>甜蜜双排</li>-->
+        <!--                <li>闅忔満鍒嗛厤蹇冨姩鍢夊</li>-->
+        <!--                <li>涓栫晫鏉鎴樻ā寮?/li>-->
+        <!--                <li>姝绘枟浜哄ご鍐宠儨</li>-->
+        <!--                <li>鐢滆湝鍙屾帓</li>-->
         <!--            </ul>-->
         <!--            <button class="mode-btn">ENTER</button>-->
         <!--        </div>-->
     </div>
 </div>
-
-<div class="footer">
-    2025 小分队 |
-    <a href="javascript:void(0)" onclick="openSystemInfo()">小分队成员信息</a>
-</div>
-
-<!-- ===================== 超大无滚动弹窗 ===================== -->
-<div id="systemInfoModal" class="cyber-modal">
-    <div class="cyber-window-big">
-        <div class="cyber-header">
-            <span>小分队全员档案</span>
-            <button class="cyber-close" onclick="closeSystemInfo()">X</button>
-        </div>
-        <div id="cyberContentBig" class="cyber-content-big"></div>
-    </div>
-</div>
-
+<!-- ===================== 瓒呭ぇ鏃犳粴鍔ㄥ脊绐?===================== -->
 <script src="js/config.js"></script>
 <script>
     const systemInfoData = window.PRESET_PLAYERS || [];
-
-    function openSystemInfo() {
-        const modal = document.getElementById('systemInfoModal');
-        const container = document.getElementById('cyberContentBig');
-        container.innerHTML = '';
-
-        systemInfoData.forEach((item, index) => {
-            const card = document.createElement('div');
-            card.className = 'cyber-card';
-            card.style.animationDelay = `${index * 0.03}s`;
-            card.innerHTML = `
-                <div class="name">${item.name}</div>
-                <div class="desc">${item.description}</div>
-            `;
-            container.appendChild(card);
-        });
-
-        modal.style.display = 'flex';
-        // 触发重排保证动画生效
-        void modal.offsetHeight;
-    }
-
-    function closeSystemInfo() {
-        document.getElementById('systemInfoModal').style.display = 'none';
-    }
-
-    // 点击空白处关闭
-    document.getElementById('systemInfoModal').addEventListener('click', function (e) {
-        if (e.target === this) closeSystemInfo();
-    });
-
     function selectMode(mode) {
         const card = event.currentTarget;
         card.querySelector('.mode-btn');
@@ -639,9 +568,6 @@
         switch (mode) {
             case 'randomTeamHeroV2':
                 location.href = 'randomHeroV2.html';
-                break;
-            case 'randomTeamHero':
-                location.href = 'randomHero.html';
                 break;
             case 'fixedTeamHero':
                 location.href = 'fixedTeamHero.html';
@@ -655,11 +581,9 @@
             case 'dog':
                 location.href = 'dog_training.html';
                 break;
-            case 'guaiwu':
-                location.href = 'guaiwu.html';
-                break;
         }
     }
 </script>
 </body>
 </html>
+
