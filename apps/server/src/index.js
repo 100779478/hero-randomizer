@@ -276,6 +276,22 @@ addRoute("GET", "/api/auth/me", async (ctx) => {
   ctx.body = { user: ctx.state.user };
 });
 
+addRoute("PATCH", "/api/auth/profile", async (ctx) => {
+  await requireAuth(ctx);
+  const { nickname = "", password = "" } = ctx.request.body || {};
+  const normalizedNickname = String(nickname).trim();
+  const normalizedPassword = String(password).trim();
+  if (!normalizedNickname) ctx.throw(400, "昵称不能为空");
+  if (normalizedPassword && normalizedPassword.length < 6) ctx.throw(400, "密码至少 6 位");
+  if (normalizedPassword) {
+    db.prepare(`UPDATE users SET nickname = ?, password_hash = ? WHERE id = ?`).run(normalizedNickname, hashPassword(normalizedPassword), ctx.state.user.id);
+  } else {
+    db.prepare(`UPDATE users SET nickname = ? WHERE id = ?`).run(normalizedNickname, ctx.state.user.id);
+  }
+  const updatedUser = db.prepare(`SELECT id, username, nickname, created_at FROM users WHERE id = ?`).get(ctx.state.user.id);
+  ctx.body = { user: sanitizeUser(updatedUser) };
+});
+
 addRoute("GET", "/api/admin/dashboard", async (ctx) => {
   await requireCatalogAdmin(ctx);
   ctx.body = fetchAdminDashboard();

@@ -3383,6 +3383,62 @@ th, td {
   white-space: nowrap;
 }
 
+.settings-account-card {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.settings-account-body {
+  width: min(100%, 560px);
+  margin: 0 auto;
+}
+
+.settings-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-field {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #9db2cf;
+}
+
+.settings-field span {
+  color: #8ea4c8;
+}
+
+.settings-input-disabled,
+.settings-field .legacy-input:disabled {
+  color: #8ea4c8;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.settings-account-span-two {
+  grid-column: 1 / -1;
+}
+
+.settings-account-hint {
+  margin-top: 10px;
+  color: #8ea4c8;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+.settings-account-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .settings-overview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -3461,6 +3517,18 @@ th, td {
     align-items: stretch;
   }
 
+  .settings-account-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-account-span-two {
+    grid-column: auto;
+  }
+
+  .settings-account-actions {
+    justify-content: stretch;
+  }
+
   .settings-player-list,
   .settings-player-actions {
     grid-template-columns: 1fr;
@@ -3476,7 +3544,8 @@ th, td {
 
   .settings-level-select,
   .settings-player-actions .small-btn,
-  .settings-toolbar .small-btn {
+  .settings-toolbar .small-btn,
+  .settings-account-actions .small-btn {
     width: 100%;
   }
 }

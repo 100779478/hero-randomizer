@@ -33,6 +33,12 @@ function clearSession() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+function updateSessionUser(user) {
+  if (!session.token || !user) return;
+  session.user = user;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: session.token, user }));
+}
+
 function resolveMessage(error, fallback = "操作失败") {
   if (error instanceof Error) return error.message || fallback;
   if (typeof error === "string") return error || fallback;
@@ -90,6 +96,7 @@ async function request(path, options = {}) {
 const api = {
   login(body) { return request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }); },
   register(body) { return request("/api/auth/register", { method: "POST", body: JSON.stringify(body) }); },
+  updateProfile(body) { return request("/api/auth/profile", { method: "PATCH", body: JSON.stringify(body) }); },
   bootstrap() { return request("/api/bootstrap"); },
   addPlayer(body) { return request("/api/players", { method: "POST", body: JSON.stringify(body) }); },
   updatePlayer(id, body) { return request(`/api/players/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
@@ -307,6 +314,7 @@ const SettingsModal = {
     const players = ref([]);
     const summary = reactive({ playerCount: 0, heroCount: 0, mapCount: 0, historyCount: 0 });
     const playerForm = reactive({ name: "", level: 3, preferredRoles: ["T", "C", "N"] });
+    const accountForm = reactive({ nickname: "", password: "", confirmPassword: "" });
 
     const filteredPlayers = computed(() => {
       const keyword = searchKeyword.value.trim().toLowerCase();
@@ -337,16 +345,23 @@ const SettingsModal = {
       player.preferredRoles = current.concat(role);
     }
 
+    function applyPlayers(nextPlayers) {
+      players.value = (nextPlayers || []).map(decoratePlayer);
+      summary.playerCount = players.value.length;
+    }
+
     async function loadSettings() {
       loading.value = true;
       errorMessage.value = "";
       try {
         const payload = await api.bootstrap();
-        players.value = (payload.players || []).map(decoratePlayer);
-        summary.playerCount = (payload.players || []).length;
+        applyPlayers(payload.players || []);
         summary.heroCount = (payload.heroes || []).length;
         summary.mapCount = (payload.maps || []).length;
         summary.historyCount = (payload.history || []).length;
+        accountForm.nickname = payload.user?.nickname || session.user?.nickname || "";
+        accountForm.password = "";
+        accountForm.confirmPassword = "";
       } catch (error) {
         showError(error);
       } finally {
@@ -354,8 +369,8 @@ const SettingsModal = {
       }
     }
 
-    async function syncAfterMutation() {
-      await loadSettings();
+    function syncAfterMutation(nextPlayers) {
+      applyPlayers(nextPlayers || []);
       emit("updated");
     }
 
@@ -365,7 +380,7 @@ const SettingsModal = {
       saving.value = true;
       errorMessage.value = "";
       try {
-        await api.addPlayer({
+        const nextPlayers = await api.addPlayer({
           name,
           level: Number(playerForm.level) || 1,
           preferredRoles: normalizePreferredRoles(playerForm.preferredRoles),
@@ -373,7 +388,7 @@ const SettingsModal = {
         playerForm.name = "";
         playerForm.level = 3;
         playerForm.preferredRoles = ["T", "C", "N"];
-        await syncAfterMutation();
+        syncAfterMutation(nextPlayers);
       } catch (error) {
         showError(error);
       } finally {
@@ -387,12 +402,12 @@ const SettingsModal = {
       saving.value = true;
       errorMessage.value = "";
       try {
-        await api.updatePlayer(player.id, {
+        const nextPlayers = await api.updatePlayer(player.id, {
           name,
           level: Number(player.level) || 1,
           preferredRoles: normalizePreferredRoles(player.preferredRoles),
         });
-        await syncAfterMutation();
+        syncAfterMutation(nextPlayers);
       } catch (error) {
         showError(error);
       } finally {
@@ -404,8 +419,31 @@ const SettingsModal = {
       saving.value = true;
       errorMessage.value = "";
       try {
-        await api.deletePlayer(id);
-        await syncAfterMutation();
+        const nextPlayers = await api.deletePlayer(id);
+        syncAfterMutation(nextPlayers);
+      } catch (error) {
+        showError(error);
+      } finally {
+        saving.value = false;
+      }
+    }
+
+    async function saveAccount() {
+      const nickname = String(accountForm.nickname || "").trim();
+      const password = String(accountForm.password || "").trim();
+      const confirmPassword = String(accountForm.confirmPassword || "").trim();
+      if (!nickname) return alert("昵称不能为空");
+      if (password && password.length < 6) return alert("密码至少 6 位");
+      if (password !== confirmPassword) return alert("两次输入的密码不一致");
+      saving.value = true;
+      errorMessage.value = "";
+      try {
+        const payload = await api.updateProfile({ nickname, password });
+        updateSessionUser(payload.user);
+        accountForm.password = "";
+        accountForm.confirmPassword = "";
+        emit("updated");
+        showSuccess(password ? "账号信息已更新，密码已修改" : "昵称已更新");
       } catch (error) {
         showError(error);
       } finally {
@@ -434,6 +472,7 @@ const SettingsModal = {
       filteredPlayers,
       summary,
       playerForm,
+      accountForm,
       preferredRolesText,
       closeModal,
       toggleNewPlayerRole,
@@ -442,6 +481,7 @@ const SettingsModal = {
       addPlayer,
       savePlayer,
       removePlayer,
+      saveAccount,
     };
   },
   template: `
@@ -461,6 +501,7 @@ const SettingsModal = {
 
         <div class="settings-tabs">
           <button class="settings-tab" :class="{ active: activeTab === 'players' }" type="button" @click="activeTab = 'players'">玩家池</button>
+          <button class="settings-tab" :class="{ active: activeTab === 'account' }" type="button" @click="activeTab = 'account'">账号</button>
           <button class="settings-tab" :class="{ active: activeTab === 'overview' }" type="button" @click="activeTab = 'overview'">概览</button>
         </div>
 
@@ -516,6 +557,35 @@ const SettingsModal = {
             </div>
             <div v-if="loading" class="empty-state">正在加载玩家列表...</div>
             <div v-else-if="!filteredPlayers.length" class="empty-state">没有匹配的玩家</div>
+          </div>
+        </template>
+
+        <template v-else-if="activeTab === 'account'">
+          <div class="settings-account-card">
+            <div class="settings-account-body">
+              <div class="settings-account-grid">
+                <label class="settings-field settings-account-span-two">
+                  <span>用户名</span>
+                  <input :value="session.user?.username || ''" class="legacy-input settings-input-disabled" disabled />
+                </label>
+                <label class="settings-field">
+                  <span>昵称</span>
+                  <input v-model="accountForm.nickname" class="legacy-input" placeholder="请输入昵称" />
+                </label>
+                <label class="settings-field">
+                  <span>新密码</span>
+                  <input v-model="accountForm.password" class="legacy-input" type="password" placeholder="留空则不修改" autocomplete="new-password" />
+                </label>
+                <label class="settings-field settings-account-span-two">
+                  <span>确认新密码</span>
+                  <input v-model="accountForm.confirmPassword" class="legacy-input" type="password" placeholder="再次输入新密码" autocomplete="new-password" />
+                </label>
+              </div>
+              <div class="settings-account-hint">不填写新密码时，仅更新昵称；填写密码时需要至少 6 位。</div>
+              <div class="settings-account-actions">
+                <button class="small-btn btn-green" type="button" :disabled="saving" @click="saveAccount">{{ saving ? '处理中...' : '保存账号信息' }}</button>
+              </div>
+            </div>
           </div>
         </template>
 
