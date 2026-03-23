@@ -248,6 +248,16 @@ button {
   margin-bottom: 18px;
 }
 
+.home-user-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 2px;
+  color: var(--legacy-cyan);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .home-userbar button {
   background: transparent;
   color: var(--legacy-cyan);
@@ -1542,6 +1552,11 @@ th {
 .home-userbar {
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.home-user-chip {
+  min-height: 30px;
+  font-size: 12px;
 }
 
 .home-userbar button {
@@ -3125,13 +3140,17 @@ th, td {
 
 .workspace-user-pill,
 .settings-user {
-  padding: 8px 14px;
-  border-radius: 999px;
-  color: var(--legacy-cyan);
-  border: 1px solid rgba(0, 255, 255, 0.38);
-  background: rgba(10, 8, 30, 0.72);
-  backdrop-filter: blur(10px);
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  color: #d7f7ff;
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .workspace-gear-btn {
@@ -3260,6 +3279,20 @@ th, td {
 
 .settings-level-select {
   min-width: 104px;
+}
+
+.star-level-select {
+  min-width: 104px;
+  width: 104px;
+  padding-right: 28px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.star-level-select option {
+  font-family: inherit;
+  font-size: 11px;
 }
 
 .settings-search-row {
@@ -3429,9 +3462,12 @@ th, td {
   }
 
   .settings-player-list,
-  .settings-player-head,
   .settings-player-actions {
     grid-template-columns: 1fr;
+  }
+
+  .settings-player-head {
+    grid-template-columns: minmax(0, 1fr) 96px;
   }
 
   .settings-player-role-row {
@@ -3583,14 +3619,24 @@ th, td {
   flex-wrap: wrap;
 }
 
-.admin-nav-btn,
-.admin-user-chip {
+.admin-nav-btn {
   min-height: 42px;
   padding: 0 16px;
   border-radius: 999px;
   border: 1px solid rgba(138, 182, 255, 0.2);
   background: rgba(255, 255, 255, 0.04);
   color: #d7e8ff;
+}
+
+.admin-user-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 2px;
+  border: none;
+  background: transparent;
+  color: #d7e8ff;
+  font-weight: 600;
 }
 
 .admin-nav-btn-muted {
@@ -3961,9 +4007,12 @@ th, td {
 .admin-user-chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   line-height: 1;
   font-size: 12px;
+}
+
+.admin-nav-btn {
+  justify-content: center;
 }
 
 .admin-title {
@@ -4047,3 +4096,4 @@ th, td {
     overflow: visible;
   }
 }
+

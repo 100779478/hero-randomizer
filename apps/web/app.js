@@ -1,6 +1,7 @@
 ﻿const { createApp, reactive, ref, computed, onMounted } = Vue;
 const { createRouter, createWebHistory, useRoute, useRouter } = VueRouter;
 const watch = Vue.watch;
+const { ElMessage, ElMessageBox } = ElementPlus;
 
 const STORAGE_KEY = "hero-randomizer-session";
 const ROLE_ORDER = { T: 1, C: 2, N: 3 };
@@ -31,6 +32,48 @@ function clearSession() {
   session.user = null;
   localStorage.removeItem(STORAGE_KEY);
 }
+
+function resolveMessage(error, fallback = "操作失败") {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === "string") return error || fallback;
+  if (error && typeof error.message === "string") return error.message || fallback;
+  return fallback;
+}
+
+function showMessage(type, message, options = {}) {
+  ElMessage({ type, message: resolveMessage(message), grouping: true, ...options });
+}
+
+function showSuccess(message, options = {}) {
+  showMessage("success", message, options);
+}
+
+function showWarning(message, options = {}) {
+  showMessage("warning", message, options);
+}
+
+function showError(message, options = {}) {
+  showMessage("error", message, options);
+}
+
+async function confirmAction(message, title = "提示", options = {}) {
+  try {
+    await ElMessageBox.confirm(message, title, {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      ...options,
+    });
+    return true;
+  } catch (error) {
+    if (error === "cancel" || error === "close") return false;
+    throw error;
+  }
+}
+
+window.alert = (message) => {
+  showWarning(message);
+};
 
 async function request(path, options = {}) {
   const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
@@ -65,6 +108,7 @@ const api = {
   createUser(body) { return request("/api/admin/users", { method: "POST", body: JSON.stringify(body) }); },
   updateUser(id, body) { return request(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
   deleteUser(id) { return request(`/api/admin/users/${id}`, { method: "DELETE" }); },
+  syncUserPlayers(id) { return request(`/api/admin/users/${id}/sync-players`, { method: "POST" }); },
   createAdminHero(body) { return request("/api/admin/heroes", { method: "POST", body: JSON.stringify(body) }); },
   deleteAdminHero(id) { return request(`/api/admin/heroes/${id}`, { method: "DELETE" }); },
   createAdminMap(body) { return request("/api/admin/maps", { method: "POST", body: JSON.stringify(body) }); },
@@ -120,7 +164,7 @@ function sortedTeam(team) {
 }
 
 const MODE_CARDS = [
-  { key: "random-v2", title: "全随机模式 2.0-Beta", icon: "全随机模式 2.0-Beta", description: "更公平、更自由的随机体验", features: ["多选位置偏好", "人员、英雄随机分配", "实力自动平衡", "内鬼敌对与专属英雄"] },
+  { key: "random-v2", title: "全随机模式 2.0", icon: "全随机模式 2.0", description: "更公平、更自由的随机体验", features: ["多选位置偏好", "人员、英雄随机分配", "实力自动平衡", "内鬼敌对与专属英雄"] },
   { key: "fixed-team", title: "自选模式", icon: "自选模式", description: "队伍自选 · 仅随机英雄", features: ["支持自定义玩家", "英雄随机分配", "保留原有队伍", "适合固定对抗"] },
   { key: "chaos", title: "大乱斗模式", icon: "大乱斗模式", description: "多人运动 · 自动多组分配", features: ["多人快速分组", "均衡队伍实力", "多余观战位", "适合大乱斗"] },
   { key: "dog", title: "训狗模式", icon: "训狗模式", description: "内有恶犬，生人勿进", features: ["脱敏训练", "定点上厕所", "社会化训练", "卫程豪握手"], fun: true },
@@ -141,7 +185,7 @@ const LoginView = {
         setSession(payload);
         router.push("/home");
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
       } finally {
         busy.value = false;
       }
@@ -199,7 +243,7 @@ const RegisterView = {
         setSession(payload);
         router.push("/home");
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
       } finally {
         busy.value = false;
       }
@@ -304,7 +348,7 @@ const SettingsModal = {
         summary.mapCount = (payload.maps || []).length;
         summary.historyCount = (payload.history || []).length;
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
       } finally {
         loading.value = false;
       }
@@ -331,7 +375,7 @@ const SettingsModal = {
         playerForm.preferredRoles = ["T", "C", "N"];
         await syncAfterMutation();
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
       } finally {
         saving.value = false;
       }
@@ -350,7 +394,7 @@ const SettingsModal = {
         });
         await syncAfterMutation();
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
       } finally {
         saving.value = false;
       }
@@ -363,7 +407,7 @@ const SettingsModal = {
         await api.deletePlayer(id);
         await syncAfterMutation();
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
       } finally {
         saving.value = false;
       }
@@ -426,11 +470,11 @@ const SettingsModal = {
           <div class="settings-create-card">
             <div class="settings-toolbar">
               <input v-model="playerForm.name" class="legacy-input settings-name-input" placeholder="玩家名称">
-              <select v-model="playerForm.level" class="legacy-select settings-level-select">
-                <option :value="4">⭐⭐⭐⭐</option>
-                <option :value="3">⭐⭐⭐</option>
-                <option :value="2">⭐⭐</option>
-                <option :value="1">⭐</option>
+              <select v-model="playerForm.level" class="legacy-select settings-level-select star-level-select">
+                <option :value="4">★★★★</option>
+                <option :value="3">★★★</option>
+                <option :value="2">★★</option>
+                <option :value="1">★</option>
               </select>
               <button class="small-btn" type="button" :disabled="saving" @click="addPlayer">{{ saving ? '处理中...' : '新增玩家' }}</button>
             </div>
@@ -448,11 +492,11 @@ const SettingsModal = {
             <div v-for="player in filteredPlayers" :key="player.id" class="settings-player-card">
               <div class="settings-player-head">
                 <input v-model="player.name" class="legacy-input full-width" placeholder="玩家名称">
-                <select v-model="player.level" class="legacy-select settings-level-select settings-card-level">
-                  <option :value="4">⭐⭐⭐⭐</option>
-                  <option :value="3">⭐⭐⭐</option>
-                  <option :value="2">⭐⭐</option>
-                  <option :value="1">⭐</option>
+                <select v-model="player.level" class="legacy-select settings-level-select settings-card-level star-level-select">
+                  <option :value="4">★★★★</option>
+                  <option :value="3">★★★</option>
+                  <option :value="2">★★</option>
+                  <option :value="1">★</option>
                 </select>
               </div>
               <div class="settings-player-role-row">
@@ -521,17 +565,14 @@ const AdminView = {
     }
 
     async function loadDashboard() {
-      if (!canManageCatalog.value) {
-        errorMessage.value = "当前账号没有管理权限";
-        return;
-      }
+      if (!canManageCatalog.value) return;
       loading.value = true;
       errorMessage.value = "";
       try {
         const payload = await api.adminDashboard();
         syncDashboard(payload);
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
       } finally {
         loading.value = false;
       }
@@ -544,9 +585,12 @@ const AdminView = {
       try {
         const payload = await action();
         syncDashboard(payload);
-        successMessage.value = successText;
+        const noticeText = typeof successText === "function" ? successText(payload) : successText;
+        if (noticeText) showSuccess(noticeText);
+        return payload;
       } catch (error) {
-        errorMessage.value = error.message;
+        showError(error);
+        return null;
       } finally {
         saving.value = false;
       }
@@ -576,8 +620,21 @@ const AdminView = {
 
     async function removeUser(user) {
       if (user.isSharedCatalog) return alert("默认账号不允许删除");
-      if (!confirm(`确定删除用户 ${user.username} 吗？`)) return;
+      if (!await confirmAction(`确定删除用户 ${user.username} 吗？`)) return;
       await runMutation(() => api.deleteUser(user.id), `已删除 ${user.username}`);
+    }
+
+    async function syncUserPlayers(user) {
+      if (user.isSharedCatalog) return alert("默认账号无需同步玩家列表");
+      const confirmed = await confirmAction(
+        `将 lwz 的玩家列表覆盖同步给 ${user.username}。该用户现有玩家、敌对关系、专属英雄绑定会被清空，后续修改仍只影响自己的数据。确定继续吗？`,
+        "同步玩家列表",
+      );
+      if (!confirmed) return;
+      await runMutation(
+        () => api.syncUserPlayers(user.id),
+        (payload) => `已向 ${user.username} 同步 ${Number(payload.syncedCount) || 0} 名玩家`,
+      );
     }
 
     async function createHero() {
@@ -589,7 +646,7 @@ const AdminView = {
     }
 
     async function removeHero(hero) {
-      if (!confirm(`确定删除英雄 ${hero.displayName} 吗？`)) return;
+      if (!await confirmAction(`确定删除英雄 ${hero.displayName} 吗？`)) return;
       await runMutation(() => api.deleteAdminHero(hero.id), `已删除英雄 ${hero.displayName}`);
     }
 
@@ -601,7 +658,7 @@ const AdminView = {
     }
 
     async function removeMap(map) {
-      if (!confirm(`确定删除地图 ${map.name} 吗？`)) return;
+      if (!await confirmAction(`确定删除地图 ${map.name} 吗？`)) return;
       await runMutation(() => api.deleteAdminMap(map.id), `已删除地图 ${map.name}`);
     }
 
@@ -627,6 +684,7 @@ const AdminView = {
       createUser,
       saveUser,
       removeUser,
+      syncUserPlayers,
       createHero,
       removeHero,
       createMap,
@@ -658,10 +716,6 @@ const AdminView = {
           </div>
         </section>
 
-        <div class="admin-notice-slot">
-          <div v-if="errorMessage" class="admin-alert admin-alert-error">{{ errorMessage }}</div>
-          <div v-else-if="successMessage" class="admin-alert admin-alert-success">{{ successMessage }}</div>
-        </div>
 
         <div v-if="!canManageCatalog" class="admin-locked-card">
           当前账号没有管理权限，仅默认账号 lwz 可以访问这个页面。
@@ -703,6 +757,7 @@ const AdminView = {
                   </div>
                   <div class="admin-card-actions">
                     <button class="auth-btn auth-btn-primary" type="button" :disabled="saving" @click="saveUser(user)">保存</button>
+                    <button v-if="!user.isSharedCatalog" class="auth-btn auth-btn-primary" type="button" :disabled="saving" @click="syncUserPlayers(user)">同步玩家</button>
                     <button class="auth-btn auth-btn-secondary" type="button" :disabled="saving || user.isSharedCatalog" @click="removeUser(user)">删除</button>
                   </div>
                 </div>
@@ -777,7 +832,7 @@ const LandingView = {
     <div class="home-page">
       <div class="home-shell home-shell-legacy">
         <div class="home-userbar legacy-userbar">
-          <button type="button">{{ session.user?.nickname || session.user?.username }}</button>
+          <div class="home-user-chip">{{ session.user?.nickname || session.user?.username }}</div>
           <button v-if="canManageCatalog" type="button" class="admin-entry-btn" @click="openAdmin">管理台</button>
           <button type="button" class="settings-gear-btn" @click="openSettings" aria-label="打开全局设置">⚙</button>
           <button type="button" @click="logout">退出登录</button>
@@ -919,8 +974,8 @@ const DogView = {
       persist();
     }
 
-    function resetDogGame() {
-      if (!confirm("确定要重置训狗模式中的所有数据吗？")) return;
+    async function resetDogGame() {
+      if (!await confirmAction("确定要重置训狗模式中的所有数据吗？", "重置确认")) return;
       players.value = players.value.map((player) => ({ ...player, gameCount: 0, waitCount: 0 }));
       currentGamePlayers.value = [];
       waitingPlayers.value = [];
@@ -1801,8 +1856,8 @@ const workspaceTemplate = `
           <div class="card-title">玩家列表</div>
           <div class="input-row">
             <input v-model="fixedNameInput" class="player-input legacy-input" placeholder="输入名字搜索或添加玩家">
-            <select v-model="fixedLevel" class="player-input legacy-select">
-              <option :value="1">⭐</option><option :value="2">⭐⭐</option><option :value="3">⭐⭐⭐</option><option :value="4">⭐⭐⭐⭐</option>
+            <select v-model="fixedLevel" class="player-input legacy-select star-level-select">
+              <option :value="1">★</option><option :value="2">★★</option><option :value="3">★★★</option><option :value="4">★★★★</option>
             </select>
             <button class="btn-small" type="button" @click="createFixedPlayer">添加</button>
           </div>
@@ -1935,7 +1990,14 @@ router.beforeEach((to) => {
   if ((to.path === "/login" || to.path === "/register") && session.token) return "/home";
   return true;
 });
-createApp({ template: "<router-view :key='$route.fullPath'></router-view>" }).use(router).mount("#app");
+const app = createApp({ template: "<router-view :key='$route.fullPath'></router-view>" });
+app.use(router);
+app.use(ElementPlus);
+app.mount("#app");
+
+
+
+
 
 
 

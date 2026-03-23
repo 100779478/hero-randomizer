@@ -13,8 +13,10 @@ const REGISTRATION_INVITE_CODE = String(process.env.REGISTRATION_INVITE_CODE || 
 const db = createDatabase();
 const webRoot = path.resolve(__dirname, "../../web");
 const vendorFiles = {
-  "/vendor/vue.global.js": path.resolve(__dirname, "../../web/node_modules/vue/dist/vue.global.js"),
-  "/vendor/vue-router.global.js": path.resolve(__dirname, "../../web/node_modules/vue-router/dist/vue-router.global.js"),
+  "/vendor/vue.global.js": path.resolve(__dirname, "../../../node_modules/vue/dist/vue.global.prod.js"),
+  "/vendor/vue-router.global.js": path.resolve(__dirname, "../../web/node_modules/vue-router/dist/vue-router.global.prod.js"),
+  "/vendor/element-plus.full.min.js": path.resolve(__dirname, "../../../node_modules/element-plus/dist/index.full.min.js"),
+  "/vendor/element-plus.css": path.resolve(__dirname, "../../../node_modules/element-plus/dist/index.css"),
 };
 
 initSchema(db);
@@ -139,6 +141,37 @@ function fetchAdminDashboard() {
   return { users, heroes, maps };
 }
 
+function syncPlayersFromAdminToUser(targetUserId) {
+  const catalogUserId = sharedCatalogUserId();
+  if (!catalogUserId) {
+    const error = new Error("默认账号不存在");
+    error.status = 500;
+    throw error;
+  }
+  if (targetUserId === catalogUserId) {
+    const error = new Error("默认账号无需同步玩家列表");
+    error.status = 400;
+    throw error;
+  }
+
+  const sourcePlayers = db.prepare(`SELECT name, level, preferred_role AS preferredRole FROM players WHERE user_id = ? ORDER BY created_at ASC, id ASC`).all(catalogUserId);
+  const deletePlayers = db.prepare(`DELETE FROM players WHERE user_id = ?`);
+  const insertPlayer = db.prepare(`INSERT INTO players (user_id, name, level, preferred_role) VALUES (?, ?, ?, ?)`);
+
+  db.exec("BEGIN");
+  try {
+    deletePlayers.run(targetUserId);
+    sourcePlayers.forEach((player) => {
+      insertPlayer.run(targetUserId, player.name, Number(player.level) || 1, player.preferredRole || "any");
+    });
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return sourcePlayers.length;
+}
 function fetchBootstrap(userId) {
   const catalogUserId = sharedCatalogUserId();
   const players = db.prepare(`SELECT id, name, level, preferred_role AS preferredRole, created_at AS createdAt FROM players WHERE user_id = ? ORDER BY created_at ASC, id ASC`).all(userId).map(decoratePlayer);
@@ -293,6 +326,15 @@ addRoute("DELETE", "/api/admin/users/:id", async (ctx) => {
   ctx.body = fetchAdminDashboard();
 });
 
+addRoute("POST", "/api/admin/users/:id/sync-players", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  const userId = Number(ctx.params.id);
+  const existing = db.prepare(`SELECT id, username FROM users WHERE id = ?`).get(userId);
+  if (!existing) ctx.throw(404, "用户不存在");
+  if (existing.username === SHARED_CATALOG_USERNAME) ctx.throw(403, "默认账号无需同步玩家列表");
+  const syncedCount = syncPlayersFromAdminToUser(userId);
+  ctx.body = { ...fetchAdminDashboard(), syncedCount };
+});
 addRoute("POST", "/api/admin/heroes", async (ctx) => {
   await requireCatalogAdmin(ctx);
   const { roleCode = "", name = "" } = ctx.request.body || {};
@@ -454,6 +496,8 @@ addRoute("POST", "/api/draw", async (ctx) => {
 app.listen(PORT, () => {
   console.log(`Koa API listening on http://localhost:${PORT}`);
 });
+
+
 
 
 
