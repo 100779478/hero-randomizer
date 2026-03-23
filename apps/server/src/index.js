@@ -3,12 +3,13 @@ const path = require("node:path");
 const Koa = require("koa");
 const cors = require("@koa/cors");
 const bodyParser = require("koa-bodyparser");
-const { createDatabase, initSchema, ensureAdminAccount, getSharedCatalogUserId } = require("./db");
+const { createDatabase, initSchema, ensureAdminAccount, getSharedCatalogUserId, SHARED_CATALOG_USERNAME } = require("./db");
 const { hashPassword, verifyPassword } = require("./utils/password");
 const { createToken, createExpiry } = require("./utils/token");
 const { drawMatch } = require("./services/randomizer-service");
 
 const PORT = Number(process.env.PORT || 3000);
+const REGISTRATION_INVITE_CODE = String(process.env.REGISTRATION_INVITE_CODE || "acky0629").trim();
 const db = createDatabase();
 const webRoot = path.resolve(__dirname, "../../web");
 const vendorFiles = {
@@ -91,6 +92,7 @@ function decoratePlayer(row) {
     id: row.id,
     name: row.name,
     level: Number(row.level) || 1,
+    preferredRole: serializePreferredRoles(preferredRoles),
     preferredRoles,
     createdAt: row.createdAt || row.created_at,
   };
@@ -107,6 +109,34 @@ async function requireAuth(ctx) {
 
 function sharedCatalogUserId() {
   return getSharedCatalogUserId(db);
+}
+
+async function requireCatalogAdmin(ctx) {
+  await requireAuth(ctx);
+  if (ctx.state.user.username !== SHARED_CATALOG_USERNAME) ctx.throw(403, "仅默认账号可访问管理页");
+}
+
+function fetchAdminDashboard() {
+  const catalogUserId = sharedCatalogUserId();
+  const users = db.prepare(`
+    SELECT
+      users.id,
+      users.username,
+      users.nickname,
+      users.created_at AS createdAt,
+      (SELECT COUNT(*) FROM players WHERE players.user_id = users.id) AS playerCount,
+      (SELECT COUNT(*) FROM match_history WHERE match_history.user_id = users.id) AS historyCount
+    FROM users
+    ORDER BY CASE WHEN users.username = ? THEN 0 ELSE 1 END, users.created_at ASC, users.id ASC
+  `).all(SHARED_CATALOG_USERNAME).map((user) => ({
+    ...user,
+    playerCount: Number(user.playerCount) || 0,
+    historyCount: Number(user.historyCount) || 0,
+    isSharedCatalog: user.username === SHARED_CATALOG_USERNAME,
+  }));
+  const heroes = db.prepare(`SELECT id, role_code AS roleCode, name, created_at AS createdAt FROM heroes WHERE user_id = ? ORDER BY role_code ASC, name COLLATE NOCASE ASC`).all(catalogUserId).map((hero) => ({ ...hero, displayName: `${hero.roleCode}-${hero.name}` }));
+  const maps = db.prepare(`SELECT id, name, created_at AS createdAt FROM maps WHERE user_id = ? ORDER BY name COLLATE NOCASE ASC, id ASC`).all(catalogUserId);
+  return { users, heroes, maps };
 }
 
 function fetchBootstrap(userId) {
@@ -141,13 +171,22 @@ app.use(async (ctx, next) => {
   const vendorFile = vendorFiles[ctx.path];
   if (vendorFile && fs.existsSync(vendorFile)) {
     ctx.set("Content-Type", contentType(vendorFile));
+    ctx.set("Cache-Control", "no-store");
     ctx.body = fs.readFileSync(vendorFile);
     return;
   }
-  const isAppRoute = ctx.path === "/" || ctx.path === "/home" || ctx.path === "/login" || ctx.path.startsWith("/mode/") || ctx.path.startsWith("/fun/");
+  const isAppRoute =
+    ctx.path === "/" ||
+    ctx.path === "/home" ||
+    ctx.path === "/login" ||
+    ctx.path === "/register" ||
+    ctx.path === "/admin" ||
+    ctx.path.startsWith("/mode/") ||
+    ctx.path.startsWith("/fun/");
   const targetFile = isAppRoute ? path.join(webRoot, "index.html") : path.join(webRoot, ctx.path.replace(/^\//, ""));
   if (fs.existsSync(targetFile) && fs.statSync(targetFile).isFile()) {
     ctx.set("Content-Type", contentType(targetFile));
+    ctx.set("Cache-Control", "no-store");
     ctx.body = fs.readFileSync(targetFile);
     return;
   }
@@ -184,10 +223,14 @@ addRoute("POST", "/api/auth/login", async (ctx) => {
 });
 
 addRoute("POST", "/api/auth/register", async (ctx) => {
-  const { username = "", password = "", nickname = "" } = ctx.request.body || {};
+  const { username = "", password = "", nickname = "", inviteCode = "" } = ctx.request.body || {};
   const normalizedUsername = String(username).trim();
   const normalizedNickname = String(nickname).trim() || normalizedUsername;
+  const normalizedInviteCode = String(inviteCode).trim();
   if (!normalizedUsername || !password) ctx.throw(400, "用户名和密码不能为空");
+  if (!REGISTRATION_INVITE_CODE) ctx.throw(503, "系统未配置邀请码，暂不开放注册");
+  if (!normalizedInviteCode) ctx.throw(400, "请输入邀请码");
+  if (normalizedInviteCode !== REGISTRATION_INVITE_CODE) ctx.throw(403, "邀请码错误");
   if (String(password).length < 6) ctx.throw(400, "密码至少 6 位");
   if (db.prepare(`SELECT id FROM users WHERE username = ?`).get(normalizedUsername)) ctx.throw(409, "用户名已存在");
   db.prepare(`INSERT INTO users (username, nickname, password_hash) VALUES (?, ?, ?)`).run(normalizedUsername, normalizedNickname, hashPassword(String(password)));
@@ -198,6 +241,94 @@ addRoute("POST", "/api/auth/register", async (ctx) => {
 addRoute("GET", "/api/auth/me", async (ctx) => {
   await requireAuth(ctx);
   ctx.body = { user: ctx.state.user };
+});
+
+addRoute("GET", "/api/admin/dashboard", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  ctx.body = fetchAdminDashboard();
+});
+
+addRoute("POST", "/api/admin/users", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  const { username = "", password = "", nickname = "" } = ctx.request.body || {};
+  const normalizedUsername = String(username).trim();
+  const normalizedNickname = String(nickname).trim();
+  const normalizedPassword = String(password).trim();
+  if (!normalizedUsername || !normalizedNickname || !normalizedPassword) ctx.throw(400, "用户名、昵称和密码不能为空");
+  if (normalizedPassword.length < 6) ctx.throw(400, "密码至少 6 位");
+  if (db.prepare(`SELECT id FROM users WHERE username = ?`).get(normalizedUsername)) ctx.throw(409, "用户名已存在");
+  db.prepare(`INSERT INTO users (username, nickname, password_hash) VALUES (?, ?, ?)`).run(normalizedUsername, normalizedNickname, hashPassword(normalizedPassword));
+  ctx.status = 201;
+  ctx.body = fetchAdminDashboard();
+});
+
+addRoute("PATCH", "/api/admin/users/:id", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  const userId = Number(ctx.params.id);
+  const existing = db.prepare(`SELECT id, username, nickname FROM users WHERE id = ?`).get(userId);
+  if (!existing) ctx.throw(404, "用户不存在");
+  const { nickname, password = "" } = ctx.request.body || {};
+  const normalizedNickname = String(nickname == null ? existing.nickname : nickname).trim();
+  const normalizedPassword = String(password).trim();
+  if (!normalizedNickname) ctx.throw(400, "昵称不能为空");
+  if (normalizedPassword && normalizedPassword.length < 6) ctx.throw(400, "密码至少 6 位");
+  if (normalizedPassword) {
+    db.prepare(`UPDATE users SET nickname = ?, password_hash = ? WHERE id = ?`).run(normalizedNickname, hashPassword(normalizedPassword), userId);
+  } else {
+    db.prepare(`UPDATE users SET nickname = ? WHERE id = ?`).run(normalizedNickname, userId);
+  }
+  if (existing.username === SHARED_CATALOG_USERNAME && ctx.state.user.id === userId) {
+    ctx.state.user.nickname = normalizedNickname;
+  }
+  ctx.body = fetchAdminDashboard();
+});
+
+addRoute("DELETE", "/api/admin/users/:id", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  const userId = Number(ctx.params.id);
+  const existing = db.prepare(`SELECT id, username FROM users WHERE id = ?`).get(userId);
+  if (!existing) ctx.throw(404, "用户不存在");
+  if (existing.username === SHARED_CATALOG_USERNAME) ctx.throw(403, "默认账号不允许删除");
+  db.prepare(`DELETE FROM users WHERE id = ?`).run(userId);
+  ctx.body = fetchAdminDashboard();
+});
+
+addRoute("POST", "/api/admin/heroes", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  const { roleCode = "", name = "" } = ctx.request.body || {};
+  const normalizedRoleCode = String(roleCode).trim().toUpperCase();
+  const normalizedName = String(name).trim();
+  if (!["T", "C", "N"].includes(normalizedRoleCode)) ctx.throw(400, "英雄定位无效");
+  if (!normalizedName) ctx.throw(400, "英雄名称不能为空");
+  const catalogUserId = sharedCatalogUserId();
+  if (db.prepare(`SELECT id FROM heroes WHERE user_id = ? AND role_code = ? AND name = ?`).get(catalogUserId, normalizedRoleCode, normalizedName)) ctx.throw(409, "英雄已存在");
+  db.prepare(`INSERT INTO heroes (user_id, role_code, name) VALUES (?, ?, ?)`).run(catalogUserId, normalizedRoleCode, normalizedName);
+  ctx.status = 201;
+  ctx.body = fetchAdminDashboard();
+});
+
+addRoute("DELETE", "/api/admin/heroes/:id", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  db.prepare(`DELETE FROM heroes WHERE id = ? AND user_id = ?`).run(Number(ctx.params.id), sharedCatalogUserId());
+  ctx.body = fetchAdminDashboard();
+});
+
+addRoute("POST", "/api/admin/maps", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  const { name = "" } = ctx.request.body || {};
+  const normalizedName = String(name).trim();
+  if (!normalizedName) ctx.throw(400, "地图名称不能为空");
+  const catalogUserId = sharedCatalogUserId();
+  if (db.prepare(`SELECT id FROM maps WHERE user_id = ? AND name = ?`).get(catalogUserId, normalizedName)) ctx.throw(409, "地图已存在");
+  db.prepare(`INSERT INTO maps (user_id, name) VALUES (?, ?)`).run(catalogUserId, normalizedName);
+  ctx.status = 201;
+  ctx.body = fetchAdminDashboard();
+});
+
+addRoute("DELETE", "/api/admin/maps/:id", async (ctx) => {
+  await requireCatalogAdmin(ctx);
+  db.prepare(`DELETE FROM maps WHERE id = ? AND user_id = ?`).run(Number(ctx.params.id), sharedCatalogUserId());
+  ctx.body = fetchAdminDashboard();
 });
 
 addRoute("GET", "/api/bootstrap", async (ctx) => {
@@ -323,4 +454,11 @@ addRoute("POST", "/api/draw", async (ctx) => {
 app.listen(PORT, () => {
   console.log(`Koa API listening on http://localhost:${PORT}`);
 });
+
+
+
+
+
+
+
 

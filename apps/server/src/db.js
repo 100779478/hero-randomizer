@@ -3,7 +3,10 @@ const { DatabaseSync } = require("node:sqlite");
 const { loadLegacyConfig } = require("./services/legacy-loader");
 const { hashPassword } = require("./utils/password");
 
-const SHARED_CATALOG_USERNAME = "admin";
+const SHARED_CATALOG_USERNAME = "lwz";
+const LEGACY_SHARED_CATALOG_USERNAME = "admin";
+const SHARED_CATALOG_NICKNAME = "lwz";
+const SHARED_CATALOG_PASSWORD = "20251030";
 
 function createDatabase() {
   const filePath = path.resolve(__dirname, "../data/app.db");
@@ -275,12 +278,26 @@ function ensureAdminAccount(db) {
   let admin = db.prepare(`SELECT id FROM users WHERE username = ?`).get(SHARED_CATALOG_USERNAME);
 
   if (!admin) {
+    const legacyAdmin = db.prepare(`SELECT id FROM users WHERE username = ?`).get(LEGACY_SHARED_CATALOG_USERNAME);
+    if (legacyAdmin) {
+      db.prepare(`UPDATE users SET username = ?, nickname = ?, password_hash = ? WHERE id = ?`).run(
+        SHARED_CATALOG_USERNAME,
+        SHARED_CATALOG_NICKNAME,
+        hashPassword(SHARED_CATALOG_PASSWORD),
+        legacyAdmin.id,
+      );
+      db.prepare(`DELETE FROM user_tokens WHERE user_id = ?`).run(legacyAdmin.id);
+      admin = { id: Number(legacyAdmin.id) };
+    }
+  }
+
+  if (!admin) {
     const result = db
       .prepare(`
         INSERT INTO users (username, nickname, password_hash)
         VALUES (?, ?, ?)
       `)
-      .run(SHARED_CATALOG_USERNAME, "管理员", hashPassword("123456"));
+      .run(SHARED_CATALOG_USERNAME, SHARED_CATALOG_NICKNAME, hashPassword(SHARED_CATALOG_PASSWORD));
     admin = { id: Number(result.lastInsertRowid) };
   }
 
@@ -307,4 +324,9 @@ module.exports = {
   ensureAdminAccount,
   seedUserFromAdmin,
   getSharedCatalogUserId,
+  SHARED_CATALOG_USERNAME,
 };
+
+
+
+

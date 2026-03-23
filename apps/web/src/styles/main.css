@@ -373,6 +373,38 @@ button {
   color: var(--muted);
 }
 
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-size: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px) rotate(20deg);
+  border-color: rgba(0, 245, 255, 0.55);
+  box-shadow: 0 12px 24px rgba(0, 245, 255, 0.16);
+}
+
+.player-settings-form {
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(120px, 1fr)) minmax(140px, auto);
+  align-items: center;
+}
+
+.player-settings-meta {
+  align-items: center;
+}
+
+.player-settings-list {
+  max-height: none;
+}
+
 .modal-mask {
   position: fixed;
   inset: 0;
@@ -389,6 +421,66 @@ button {
   max-height: 88vh;
   overflow: auto;
   padding: 24px;
+}
+
+.settings-modal {
+  width: min(1080px, 100%);
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+
+.tab-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.tab-btn.active {
+  color: #06111d;
+  background: linear-gradient(135deg, var(--cyan), #74faff);
+  border-color: transparent;
+}
+
+.settings-section {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-error {
+  margin-bottom: 16px;
+  border-color: rgba(255, 100, 100, 0.35);
+}
+
+.settings-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.settings-summary-card {
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.settings-summary-value {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--cyan);
+}
+
+.settings-note {
+  padding: 20px;
 }
 
 .result-grid {
@@ -438,6 +530,10 @@ button {
 
   .form-grid,
   .result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .player-settings-form {
     grid-template-columns: 1fr;
   }
 

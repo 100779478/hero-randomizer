@@ -17,13 +17,22 @@
 ## 启动
 
 1. 在仓库根目录执行 `npm install`
-2. 启动服务: `npm run dev`
-3. 打开 `http://localhost:3000`
+2. 启动服务前先设置环境变量 `REGISTRATION_INVITE_CODE`，例如 PowerShell: `$env:REGISTRATION_INVITE_CODE="你的内部邀请码"`
+3. 启动服务: `npm run dev`
+4. 打开 `http://localhost:3000`
 
 ## 首次使用
 
 1. 系统首次启动会自动建表
-2. 自动创建 `admin` 账号，密码为 `123456`
+2. 自动创建 `lwz` 账号，密码为 `20251030`
 3. 自动读取当前仓库里的 `js/config.js`
-4. 把默认玩家、英雄、地图写成 `admin` 的初始配置
-5. 其他新用户注册后会复制一份 `admin` 的默认库作为起点
+4. 把默认玩家、英雄、地图写成 `lwz` 的初始配置
+5. 其他新用户注册后会复制一份 `lwz` 的默认库作为起点
+
+## 注册限制
+
+- 新用户注册必须填写正确的邀请码
+- 邀请码由服务端环境变量 REGISTRATION_INVITE_CODE 控制
+- 如果未配置该环境变量，注册接口会直接拒绝注册
+
+
