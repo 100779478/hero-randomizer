@@ -2025,15 +2025,17 @@ const workspaceTemplate = `
     <div v-if="chaosResult" class="modal" @click.self="closeResult">
       <div class="modal-content chaos-result-modal">
         <div class="modal-header">分队结果</div>
-        <div class="teams-result">
-          <div v-for="(team, index) in chaosResult.teams" :key="index" class="result-team" :class="'team-' + index">
-            <h3>{{ ['红队','蓝队','绿队','黄队','粉队','紫队'][index] || ('队伍' + (index + 1)) }}</h3>
-            <div class="team-list chaos-team-list">
-              <div v-for="player in team" :key="index + '-' + player.name" class="chaos-team-player">{{ player.name }}</div>
+        <div class="chaos-result-body">
+          <div class="teams-result">
+            <div v-for="(team, index) in chaosResult.teams" :key="index" class="result-team" :class="'team-' + index">
+              <h3>{{ ['红队','蓝队','绿队','黄队','粉队','紫队'][index] || ('队伍' + (index + 1)) }}</h3>
+              <div class="team-list chaos-team-list">
+                <div v-for="player in team" :key="index + '-' + player.name" class="chaos-team-player">{{ player.name }}</div>
+              </div>
             </div>
           </div>
+          <div class="spectators"><h3>观战人员（{{ chaosResult.spectators.length }}人）</h3><div class="spec-list"><div v-for="player in chaosResult.spectators" :key="player" class="spec-item">{{ player }}</div><div v-if="!chaosResult.spectators.length" class="empty-state">无观战人员</div></div></div>
         </div>
-        <div class="spectators"><h3>观战人员（{{ chaosResult.spectators.length }}人）</h3><div class="spec-list"><div v-for="player in chaosResult.spectators" :key="player" class="spec-item">{{ player }}</div><div v-if="!chaosResult.spectators.length" class="empty-state">无观战人员</div></div></div>
         <div class="modal-buttons"><button class="btn-big" type="button" @click="closeResult">关闭</button><button class="btn-big chaos-restart-btn" type="button" @click="startChaosBalance">重新分队</button></div>
       </div>
     </div>
