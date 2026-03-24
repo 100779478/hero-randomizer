@@ -490,7 +490,6 @@ const SettingsModal = {
         <div class="settings-header">
           <div>
             <div class="settings-title">全局设置</div>
-            <div class="settings-subtitle">用一个入口统一维护玩家池，修改后会重新获取列表并刷新界面。</div>
           </div>
           <div class="settings-actions">
             <span class="settings-user">{{ session.user?.nickname || session.user?.username }}</span>
@@ -776,7 +775,6 @@ const AdminView = {
           <div>
             <div class="admin-kicker">Control Center</div>
             <h1 class="admin-title">用户 / 地图 / 英雄管理台</h1>
-            <p class="admin-copy">集中管理系统账号和共享资源池。这里的英雄池与地图池会直接影响所有模式的抽取结果。</p>
           </div>
           <div class="admin-summary-grid">
             <div v-for="card in summaryCards" :key="card.label" class="admin-summary-card">
