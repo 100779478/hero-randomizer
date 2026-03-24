@@ -11,15 +11,24 @@ fail() {
   exit 1
 }
 
+show_service_diagnostics() {
+  log "Service status for ${SERVICE_NAME}:"
+  systemctl status "${SERVICE_NAME}" --no-pager -l || true
+  log "Recent logs for ${SERVICE_NAME}:"
+  journalctl -u "${SERVICE_NAME}" -n 80 --no-pager || true
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="${APP_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 SERVICE_NAME="${SERVICE_NAME:-hero-randomizer}"
 ENV_FILE="${ENV_FILE:-/etc/hero-randomizer.env}"
 DATA_DIR="${DATA_DIR:-${APP_DIR}/apps/server/data}"
 BACKUP_ROOT="${BACKUP_ROOT:-${APP_DIR}/.backups}"
+STATE_DIR="${STATE_DIR:-${APP_DIR}/.deploy-state}"
 HEALTH_PATH="${HEALTH_PATH:-/health}"
 SKIP_PULL="${SKIP_PULL:-0}"
 SKIP_BACKUP="${SKIP_BACKUP:-0}"
+FORCE_INSTALL="${FORCE_INSTALL:-0}"
 
 [ -d "${APP_DIR}" ] || fail "APP_DIR does not exist: ${APP_DIR}"
 
@@ -31,6 +40,10 @@ fi
 
 if ! command -v curl >/dev/null 2>&1; then
   fail "curl is not installed"
+fi
+
+if ! command -v sha256sum >/dev/null 2>&1; then
+  fail "sha256sum is not installed"
 fi
 
 if ! systemctl cat "${SERVICE_NAME}" >/dev/null 2>&1; then
@@ -48,6 +61,26 @@ fi
 APP_PORT="${APP_PORT:-${PORT:-3000}}"
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${APP_PORT}${HEALTH_PATH}}"
 
+MANIFEST_FILES=(
+  "package-lock.json"
+  "package.json"
+  "apps/server/package.json"
+  "apps/web/package.json"
+  "packages/deep-equal/package.json"
+)
+
+dependency_fingerprint() {
+  local existing_files=()
+  local file
+  for file in "${MANIFEST_FILES[@]}"; do
+    if [ -f "${file}" ]; then
+      existing_files+=("${file}")
+    fi
+  done
+  [ "${#existing_files[@]}" -gt 0 ] || return 1
+  sha256sum "${existing_files[@]}" | sha256sum | awk '{print $1}'
+}
+
 if [ -d "${APP_DIR}/.git" ] && [ "${SKIP_PULL}" != "1" ]; then
   log "Pulling latest code"
   git fetch --all --prune
@@ -56,8 +89,23 @@ else
   log "Skipping git pull"
 fi
 
-log "Installing dependencies"
-npm ci
+mkdir -p "${STATE_DIR}"
+FINGERPRINT_FILE="${STATE_DIR}/dependencies.sha256"
+CURRENT_FINGERPRINT="$(dependency_fingerprint || true)"
+PREVIOUS_FINGERPRINT=""
+if [ -f "${FINGERPRINT_FILE}" ]; then
+  PREVIOUS_FINGERPRINT="$(cat "${FINGERPRINT_FILE}")"
+fi
+
+if [ "${FORCE_INSTALL}" = "1" ] || [ -z "${CURRENT_FINGERPRINT}" ] || [ "${CURRENT_FINGERPRINT}" != "${PREVIOUS_FINGERPRINT}" ]; then
+  log "Installing dependencies"
+  npm ci
+  if [ -n "${CURRENT_FINGERPRINT}" ]; then
+    printf '%s\n' "${CURRENT_FINGERPRINT}" > "${FINGERPRINT_FILE}"
+  fi
+else
+  log "Dependency manifests unchanged; skipping npm ci"
+fi
 
 if systemctl is-active --quiet "${SERVICE_NAME}"; then
   log "Stopping service ${SERVICE_NAME}"
@@ -80,6 +128,10 @@ systemctl restart "${SERVICE_NAME}"
 
 log "Waiting for health check: ${HEALTH_URL}"
 for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if ! systemctl is-active --quiet "${SERVICE_NAME}"; then
+    show_service_diagnostics
+    fail "Service is not active after restart"
+  fi
   if curl --fail --silent --show-error --max-time 10 "${HEALTH_URL}" >/dev/null; then
     log "Update finished successfully"
     exit 0
@@ -87,4 +139,5 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   sleep 2
 done
 
+show_service_diagnostics
 fail "Health check failed: ${HEALTH_URL}"
