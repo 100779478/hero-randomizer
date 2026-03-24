@@ -21,6 +21,10 @@
 3. 启动服务: `npm run dev`
 4. 打开 `http://localhost:3000`
 
+## 部署
+
+- 云服务器部署说明见 `DEPLOYMENT.md`
+
 ## 首次使用
 
 1. 系统首次启动会自动建表
