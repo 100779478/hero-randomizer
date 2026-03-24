@@ -213,11 +213,11 @@ const LoginView = {
             <div class="auth-grid">
               <label class="auth-field">
                 <span>用户名</span>
-                <input v-model="loginForm.username" class="auth-input" placeholder="输入用户名" autocomplete="off" name="login-username" />
+                <input v-model="loginForm.username" class="auth-input" placeholder="输入用户名" autocomplete="off" name="login-username" @keyup.enter="handleLogin" />
               </label>
               <label class="auth-field">
                 <span>密码</span>
-                <input v-model="loginForm.password" class="auth-input" placeholder="输入密码" type="password" autocomplete="new-password" name="login-password" />
+                <input v-model="loginForm.password" class="auth-input" placeholder="输入密码" type="password" autocomplete="new-password" name="login-password" @keyup.enter="handleLogin" />
               </label>
               <button class="auth-btn auth-btn-primary" :disabled="busy" @click="handleLogin">{{ busy ? '登录中...' : '进入系统' }}</button>
             </div>
