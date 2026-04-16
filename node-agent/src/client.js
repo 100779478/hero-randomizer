@@ -1,25 +1,99 @@
-// 核心：负责和模型服务通信。
-// 这里不处理 CLI 和本地工具细节，只负责把消息发给模型，再把模型消息取回来。
-export async function createChatCompletion({ config, messages, tools }) {
+function normalizeMessages(messages = []) {
+  return messages.map((message) => {
+    const normalized = {
+      role: message?.role || "user",
+      content: normalizeMessageContent(message?.content),
+    };
+
+    if (Array.isArray(message?.tool_calls) && message.tool_calls.length > 0) {
+      normalized.tool_calls = message.tool_calls.map((toolCall, index) => ({
+        id: String(toolCall?.id || `tool_call_${index + 1}`),
+        type: toolCall?.type || "function",
+        function: {
+          name: String(toolCall?.function?.name || ""),
+          arguments: String(toolCall?.function?.arguments || ""),
+        },
+      }));
+    }
+
+    if (message?.role === "tool" && message?.tool_call_id) {
+      normalized.tool_call_id = String(message.tool_call_id);
+    }
+
+    return normalized;
+  });
+}
+
+function normalizeMessageContent(content) {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+
+        if (item?.type === "text") {
+          return item.text ?? "";
+        }
+
+        return "";
+      })
+      .join("\n");
+  }
+
+  if (content == null) {
+    return "";
+  }
+
+  return String(content);
+}
+
+function buildPayload({ config, messages, tools, stream = false }) {
+  const payload = {
+    model: config.model,
+    messages: normalizeMessages(messages),
+    temperature: 0.2,
+  };
+
+  if (Array.isArray(tools) && tools.length > 0) {
+    payload.tools = tools;
+    payload.tool_choice = "auto";
+  }
+
+  if (stream) {
+    payload.stream = true;
+  }
+
+  return payload;
+}
+
+async function requestChatCompletion({ config, payload }) {
   const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${config.apiKey}`,
     },
-    body: JSON.stringify({
-      model: config.model,
-      messages,
-      tools,
-      tool_choice: "auto",
-      temperature: 0.2,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`接口请求失败（${response.status}）：${errorText}`);
   }
+
+  return response;
+}
+
+export async function createChatCompletion({ config, messages, tools }) {
+  const response = await requestChatCompletion({
+    config,
+    payload: buildPayload({ config, messages, tools }),
+  });
 
   const data = await response.json();
   const message = data?.choices?.[0]?.message;
@@ -31,38 +105,20 @@ export async function createChatCompletion({ config, messages, tools }) {
   return {
     role: "assistant",
     content: message.content ?? "",
-    tool_calls: message.tool_calls ?? [],
+    tool_calls: normalizeToolCalls(message.tool_calls ?? []),
   };
 }
 
-// 核心：以流式方式读取模型输出。
-// 一边从 SSE 增量事件里拼接文本，一边把文本片段回调给终端层逐步打印。
 export async function createChatCompletionStream({
   config,
   messages,
   tools,
   onTextDelta,
 }) {
-  const response = await fetch(`${config.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: config.model,
-      messages,
-      tools,
-      tool_choice: "auto",
-      temperature: 0.2,
-      stream: true,
-    }),
+  const response = await requestChatCompletion({
+    config,
+    payload: buildPayload({ config, messages, tools, stream: true }),
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`接口请求失败（${response.status}）：${errorText}`);
-  }
 
   const contentType = response.headers.get("content-type") || "";
 
@@ -77,7 +133,7 @@ export async function createChatCompletionStream({
     return {
       role: "assistant",
       content: message.content ?? "",
-      tool_calls: message.tool_calls ?? [],
+      tool_calls: normalizeToolCalls(message.tool_calls ?? []),
     };
   }
 
@@ -232,6 +288,20 @@ function cleanupAssistantMessage(message) {
   return {
     role: "assistant",
     content: message.content ?? "",
-    tool_calls: (message.tool_calls ?? []).filter(Boolean),
+    tool_calls: normalizeToolCalls((message.tool_calls ?? []).filter(Boolean)),
   };
+}
+
+function normalizeToolCalls(toolCalls = []) {
+  return toolCalls
+    .filter(Boolean)
+    .map((toolCall, index) => ({
+      id: String(toolCall?.id || `tool_call_${index + 1}`),
+      type: toolCall?.type || "function",
+      function: {
+        name: String(toolCall?.function?.name || ""),
+        arguments: String(toolCall?.function?.arguments || ""),
+      },
+    }))
+    .filter((toolCall) => toolCall.function.name);
 }

@@ -25,7 +25,7 @@ export const config = {
 const skillContent = loadSkillContent(config.skillFile);
 
 export const systemPrompt = [
-  "你是运行在用户本机上的 HFT 对话智能体。",
+  "你是运行在用户本机上的 OW 游戏内战智能助手。",
   "回答要简洁、准确，并且以执行任务为导向。",
   "当需要访问文件系统、调用内部接口或执行命令时，使用工具。",
   "涉及删除、清空、移除等破坏性操作时，必须先向用户说明将删除什么，并先征求确认后再继续。",

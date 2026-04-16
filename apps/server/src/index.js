@@ -147,7 +147,7 @@ function fetchAdminDashboard() {
   return { users, heroes, maps };
 }
 
-function runRandomModeAgent(payload) {
+function runRandomModeAgent(payload, overrides = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [nodeAgentBridgeScript], {
       cwd: nodeAgentRoot,
@@ -157,6 +157,7 @@ function runRandomModeAgent(payload) {
         AGENT_SHOW_TOOL_RESULTS: "false",
         AGENT_WORKSPACE: repoRoot,
         AGENT_SKILL_FILE: nodeAgentSkillFile,
+        ...overrides,
       },
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -582,11 +583,17 @@ addRoute("POST", "/api/chat/random-v2", async (ctx) => {
   await requireAuth(ctx);
   const { messages = [], context = null } = ctx.request.body || {};
 
-  if (!Array.isArray(messages) || !context || typeof context !== "object") {
-    ctx.throw(400, "缺少聊天消息或上下文");
+  if (!Array.isArray(messages)) {
+    ctx.throw(400, "缺少聊天消息");
   }
 
-  const result = await runRandomModeAgent({ messages, context });
+  const result = await runRandomModeAgent(
+    { messages, context },
+    {
+      AGENT_API_BASE_URL: `http://127.0.0.1:${PORT}`,
+      AGENT_API_TOKEN: ctx.state.token,
+    },
+  );
   ctx.body = {
     resolution: result.parsed,
     rawText: result.rawText,

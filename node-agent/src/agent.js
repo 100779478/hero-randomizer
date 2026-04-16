@@ -30,6 +30,10 @@ export async function runAgentLoop({
     }
 
     for (const toolCall of assistantMessage.tool_calls) {
+      if (!toolCall?.id) {
+        throw new Error("模型返回了工具调用，但缺少 tool_call id。");
+      }
+
       const toolResult = await executeToolCall(toolCall);
 
       if (onToolResult) {

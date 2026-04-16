@@ -161,11 +161,6 @@ function createRandomChatContext(payload) {
   return {
     mode: "random-v2",
     user: payload.user || session.user || null,
-    players: (payload.players || []).map(decoratePlayer),
-    heroes: (payload.heroes || []).map((hero) => ({ ...hero })),
-    maps: (payload.maps || []).map((map) => ({ ...map })),
-    rivals: (payload.rivals || []).map((rival) => ({ ...rival })),
-    binds: (payload.binds || []).map((bind) => ({ ...bind })),
     createdAt: Date.now(),
   };
 }
@@ -1058,6 +1053,24 @@ const ChatRandomModeView = {
       ready.value = true;
     }
 
+    async function hydrateContext() {
+      if (!context.value) return;
+      try {
+        const payload = await api.bootstrap();
+        context.value = {
+          ...createRandomChatContext(payload),
+          players: (payload.players || []).map(decoratePlayer),
+          heroes: (payload.heroes || []).map((hero) => ({ ...hero })),
+          maps: (payload.maps || []).map((map) => ({ ...map })),
+          rivals: (payload.rivals || []).map((rival) => ({ ...rival })),
+          binds: (payload.binds || []).map((bind) => ({ ...bind })),
+        };
+      } catch (error) {
+        context.value = null;
+        messages.value = [{ role: "assistant", content: resolveMessage(error, "加载聊天上下文失败") }];
+      }
+    }
+
     function buildResolvedPlayers(resolution) {
       const playerMap = new Map((context.value?.players || []).map((player) => [player.name, decoratePlayer(player)]));
       return (resolution.playerNames || [])
@@ -1110,7 +1123,11 @@ const ChatRandomModeView = {
       try {
         const payload = await api.chatRandomMode({
           messages: messages.value,
-          context: context.value,
+          context: {
+            mode: "random-v2",
+            user: context.value?.user || null,
+            createdAt: context.value?.createdAt || null,
+          },
         });
         const resolution = payload.resolution || {};
         messages.value = messages.value.concat({
@@ -1163,6 +1180,7 @@ const ChatRandomModeView = {
 
     function initialize() {
       restoreContext();
+      return hydrateContext();
     }
 
     watch(

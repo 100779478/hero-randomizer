@@ -4,5 +4,17 @@
     "title": "OW Random Mode Skill",
     "version": "1.0.0"
   },
-  "paths": {}
+  "paths": {
+    "/api/bootstrap": {
+      "get": {
+        "operationId": "fetchBootstrap",
+        "summary": "获取当前登录用户的玩家、英雄、地图、敌对关系、专属英雄绑定与历史",
+        "responses": {
+          "200": {
+            "description": "返回当前用户的 bootstrap 数据"
+          }
+        }
+      }
+    }
+  }
 }

@@ -1,8 +1,8 @@
 import { stdin as input, stdout as output, stderr as errorOutput } from "node:process";
 import { fileURLToPath } from "node:url";
 import { config, systemPrompt, validateConfig } from "./config.js";
-import { createChatCompletion } from "./client.js";
-import { getMessageText } from "./utils.js";
+import { runAgentLoop } from "./agent.js";
+import { createToolExecutor, toolDefinitions } from "./tools.js";
 
 const JSON_SCHEMA_DESCRIPTION = `{
   "mode": "random-v2",
@@ -17,25 +17,20 @@ const JSON_SCHEMA_DESCRIPTION = `{
   "unsupportedRequests": []
 }`;
 
-const FEW_SHOT_EXAMPLES = `示例 1：
-用户：告诉我当前玩家池都有谁
-输出：
-{"mode":"random-v2","playerNames":[],"allowRepeatHeroes":true,"autoAssignHeroes":true,"preferredRoleOverrides":{},"needsConfirmation":true,"questions":["当前玩家池共有 12 人：玩家1、玩家2、玩家3"],"unsupportedRequests":[]}
+const FEW_SHOT_EXAMPLES = `示例 1：用户：告诉我当前玩家池都有谁
+输出：{"mode":"random-v2","playerNames":[],"allowRepeatHeroes":true,"autoAssignHeroes":true,"preferredRoleOverrides":{},"needsConfirmation":true,"questions":["当前玩家池共有 12 人：玩家1、玩家2、玩家3"],"unsupportedRequests":[]}
 
-示例 2：
-用户：你好啊
-输出：
-{"mode":"random-v2","playerNames":[],"allowRepeatHeroes":true,"autoAssignHeroes":true,"preferredRoleOverrides":{},"needsConfirmation":true,"questions":["你好，我在。你可以先说说这局想怎么组，等你确定好玩家名单和规则后我再帮你生成结果。"],"unsupportedRequests":[]}
+示例 2：用户：你好啊
+输出：{"mode":"random-v2","playerNames":[],"allowRepeatHeroes":true,"autoAssignHeroes":true,"preferredRoleOverrides":{},"needsConfirmation":true,"questions":["你好，我在。你可以先说说这局想怎么组，等你确定好玩家名单和规则后我再帮你生成结果。"],"unsupportedRequests":[]}
 
-示例 3：
-用户：茄子、小宇、白、娜姐、内鬼、夏目蓝
-输出：
-{"mode":"random-v2","playerNames":["茄子","小宇","内鬼","夏目蓝"],"allowRepeatHeroes":true,"autoAssignHeroes":true,"preferredRoleOverrides":{},"needsConfirmation":true,"questions":["白 未完全匹配，可能是：白付。请确认你指的是哪位。","娜姐 不在当前玩家池，请先去设置页添加后再来。"],"unsupportedRequests":[]}
+示例 3：用户：白、娜姐、内鬼、夏目蓝
+输出：{"mode":"random-v2","playerNames":["内鬼","夏目蓝"],"allowRepeatHeroes":true,"autoAssignHeroes":true,"preferredRoleOverrides":{},"needsConfirmation":true,"questions":["白 未完全匹配，可能是：白丶。请确认你指的是哪位。","娜姐 未完全匹配，可能是：奶酪姐、奶酪哥。请确认你指的是哪位。"],"unsupportedRequests":[]}
 
-示例 4：
-用户：玩家1、玩家2、玩家3、玩家4、玩家5、玩家6、玩家7、玩家8、玩家9、玩家10，开启随机模式，不允许重复英雄，玩家3走奶
-输出：
-{"mode":"random-v2","playerNames":["玩家1","玩家2","玩家3","玩家4","玩家5","玩家6","玩家7","玩家8","玩家9","玩家10"],"allowRepeatHeroes":false,"autoAssignHeroes":true,"preferredRoleOverrides":{"玩家3":["N"]},"needsConfirmation":false,"questions":[],"unsupportedRequests":[]}`;
+示例 4：用户：这些人帮我分组，尽量实力均衡
+输出：{"mode":"random-v2","playerNames":[],"allowRepeatHeroes":true,"autoAssignHeroes":true,"preferredRoleOverrides":{},"needsConfirmation":true,"questions":["你是要我按全随机模式直接生成随机队伍吗？当前随机模式本身就会尽量按实力均衡分配。"],"unsupportedRequests":[]}
+
+示例 5：用户：玩家1、玩家2、玩家3、玩家4、玩家5、玩家6、玩家7、玩家8、玩家9、玩家10，开启随机模式，不允许重复英雄，玩家3走奶
+输出：{"mode":"random-v2","playerNames":["玩家1","玩家2","玩家3","玩家4","玩家5","玩家6","玩家7","玩家8","玩家9","玩家10"],"allowRepeatHeroes":false,"autoAssignHeroes":true,"preferredRoleOverrides":{"玩家3":["N"]},"needsConfirmation":false,"questions":[],"unsupportedRequests":[]}`;
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   runCli().catch((error) => {
@@ -48,13 +43,16 @@ export async function runRandomModeAgent(payload) {
   validateConfig();
 
   const messages = buildMessages(payload);
-  const assistantMessage = await createChatCompletion({
+  const executeToolCall = createToolExecutor(config);
+  const reply = await runAgentLoop({
+    history: messages,
     config,
-    messages,
-    tools: [],
+    tools: toolDefinitions,
+    executeToolCall,
+    maxSteps: 6,
   });
 
-  const rawText = getMessageText(assistantMessage);
+  const rawText = String(reply.output || "").trim();
   const parsed = parseJsonResponse(rawText);
   return {
     rawText,
@@ -84,16 +82,20 @@ function buildMessages(payload) {
         "你必须输出一个 JSON 对象，不能输出 Markdown、解释文字、代码块或额外前后缀。",
         "字段必须严格符合下面这个结构：",
         JSON_SCHEMA_DESCRIPTION,
-        "如果用户是在问“当前玩家池都有谁”“全部玩家都有谁”“玩家列表”，不要反问，直接返回 needsConfirmation=true，并把玩家池名单原样放进 questions。",
+        "当你需要判断玩家是否存在、玩家池名单、英雄池、地图池、敌对关系、专属英雄绑定时，必须优先调用 fetchBootstrap 工具获取当前登录用户的最新数据。",
+        "不要把对话里附带的历史示例名字当成真实玩家池，也不要编造玩家、英雄或地图。",
+        "如果用户输入的名字不能完全匹配，但能模糊匹配到现有玩家，请不要直接替用户决定具体是谁，而是明确列出候选让用户确认。",
+        "如果用户提到“分组”“分队”“组一下”“排一下”这类模糊说法，但没有明确要按全随机模式直接出结果，请先确认他是不是要生成随机队伍。",
+        "如果用户提到“尽量实力均衡”“平衡一点”“别差距太大”，这是当前 random-v2 默认规则，不要把它当成未支持功能。",
+        "如果用户是在问“当前玩家池都有谁”“全部玩家都有谁”“玩家列表”，不要反问，直接返回 needsConfirmation=true，并把 fetchBootstrap 得到的玩家池名单放进 questions。",
         "如果用户只是打招呼、寒暄，先自然回应，不要立刻追问玩家名单。",
-        "如果用户提到不存在的玩家，但能和现有玩家做模糊匹配，请直接在 questions 里明确给出 1-3 个相似候选让用户确认，不要只说‘不存在’。",
         "如果用户人数不是 10 或 12，不要生成最终结果，needsConfirmation 必须为 true。",
         "如果用户需求不明确，只问最小必要问题。",
         "除非用户真的意图不清楚，否则不要泛泛地问‘你要做哪一种操作’。",
         "严格参考下面这些示例输出风格：",
         FEW_SHOT_EXAMPLES,
-        "当前上下文 JSON 如下，你只能基于这些玩家、英雄、地图、敌对关系、专属英雄绑定来判断，不要编造不存在的数据：",
-        JSON.stringify(context),
+        "当前会话上下文只提供轻量入口信息，不提供玩家、地图、英雄池全量数据。",
+        `当前用户入口信息：${JSON.stringify(context)}`,
       ].join("\n\n"),
     },
     ...history
@@ -109,39 +111,7 @@ function normalizeContext(context) {
   return {
     mode: "random-v2",
     user: context.user || null,
-    players: Array.isArray(context.players)
-      ? context.players.map((player) => ({
-          name: player.name,
-          level: player.level,
-          preferredRoles: player.preferredRoles,
-        }))
-      : [],
-    heroes: Array.isArray(context.heroes)
-      ? context.heroes.map((hero) => ({
-          id: hero.id,
-          roleCode: hero.roleCode,
-          name: hero.name,
-          displayName: hero.displayName,
-        }))
-      : [],
-    maps: Array.isArray(context.maps)
-      ? context.maps.map((map) => ({
-          id: map.id,
-          name: map.name,
-        }))
-      : [],
-    rivals: Array.isArray(context.rivals)
-      ? context.rivals.map((rival) => ({
-          player1Name: rival.player1Name,
-          player2Name: rival.player2Name,
-        }))
-      : [],
-    binds: Array.isArray(context.binds)
-      ? context.binds.map((bind) => ({
-          playerName: bind.playerName,
-          heroDisplayName: bind.heroDisplayName,
-        }))
-      : [],
+    createdAt: context.createdAt || null,
   };
 }
 
