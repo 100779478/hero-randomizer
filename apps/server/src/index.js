@@ -1,5 +1,6 @@
 ﻿const fs = require("node:fs");
 const path = require("node:path");
+const { spawn } = require("node:child_process");
 const Koa = require("koa");
 const cors = require("@koa/cors");
 const bodyParser = require("koa-bodyparser");
@@ -12,11 +13,16 @@ const PORT = Number(process.env.PORT || 3000);
 const REGISTRATION_INVITE_CODE = String(process.env.REGISTRATION_INVITE_CODE || "acky0629").trim();
 const db = createDatabase();
 const webRoot = path.resolve(__dirname, "../../web");
+const repoRoot = path.resolve(__dirname, "../../..");
+const nodeAgentRoot = path.resolve(repoRoot, "node-agent");
+const nodeAgentSkillFile = path.resolve(nodeAgentRoot, "skills/random-mode-demo/SKILL.md");
+const nodeAgentBridgeScript = path.resolve(nodeAgentRoot, "src/web-random-mode.js");
 const vendorFiles = {
   "/vendor/vue.global.js": path.resolve(__dirname, "../../../node_modules/vue/dist/vue.global.prod.js"),
   "/vendor/vue-router.global.js": path.resolve(__dirname, "../../web/node_modules/vue-router/dist/vue-router.global.prod.js"),
   "/vendor/element-plus.full.min.js": path.resolve(__dirname, "../../../node_modules/element-plus/dist/index.full.min.js"),
   "/vendor/element-plus.css": path.resolve(__dirname, "../../../node_modules/element-plus/dist/index.css"),
+  "/skill/random-mode-v1.md": path.resolve(__dirname, "../../../node-agent/skills/random-mode-demo/SKILL.md"),
 };
 
 initSchema(db);
@@ -141,6 +147,61 @@ function fetchAdminDashboard() {
   return { users, heroes, maps };
 }
 
+function runRandomModeAgent(payload) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [nodeAgentBridgeScript], {
+      cwd: nodeAgentRoot,
+      windowsHide: true,
+      env: {
+        ...process.env,
+        AGENT_SHOW_TOOL_RESULTS: "false",
+        AGENT_WORKSPACE: repoRoot,
+        AGENT_SKILL_FILE: nodeAgentSkillFile,
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    const stdout = [];
+    const stderr = [];
+    let finished = false;
+    const timeout = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      child.kill();
+      reject(new Error("小分队agent 响应超时，请稍后重试"));
+    }, 90000);
+
+    child.stdout.on("data", (chunk) => stdout.push(chunk));
+    child.stderr.on("data", (chunk) => stderr.push(chunk));
+    child.on("error", (error) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on("close", (code) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      const stdoutText = Buffer.concat(stdout).toString("utf8").trim();
+      const stderrText = Buffer.concat(stderr).toString("utf8").trim();
+
+      if (code !== 0) {
+        reject(new Error(stderrText || stdoutText || `小分队agent 退出码异常：${code}`));
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(stdoutText || "{}"));
+      } catch (error) {
+        reject(new Error(`小分队agent 返回内容无法解析：${stdoutText || error.message}`));
+      }
+    });
+
+    child.stdin.end(JSON.stringify(payload));
+  });
+}
+
 function syncPlayersFromAdminToUser(targetUserId) {
   const catalogUserId = sharedCatalogUserId();
   if (!catalogUserId) {
@@ -214,6 +275,7 @@ app.use(async (ctx, next) => {
     ctx.path === "/login" ||
     ctx.path === "/register" ||
     ctx.path === "/admin" ||
+    ctx.path.startsWith("/chat/") ||
     ctx.path.startsWith("/mode/") ||
     ctx.path.startsWith("/fun/");
   const targetFile = isAppRoute ? path.join(webRoot, "index.html") : path.join(webRoot, ctx.path.replace(/^\//, ""));
@@ -514,6 +576,22 @@ addRoute("POST", "/api/draw", async (ctx) => {
 
   db.prepare(`INSERT INTO match_history (user_id, mode, selected_map, payload_json) VALUES (?, ?, ?, ?)`).run(ctx.state.user.id, result.mode, result.selectedMap ? result.selectedMap.name : null, JSON.stringify(result));
   ctx.body = { result, history: fetchBootstrap(ctx.state.user.id).history };
+});
+
+addRoute("POST", "/api/chat/random-v2", async (ctx) => {
+  await requireAuth(ctx);
+  const { messages = [], context = null } = ctx.request.body || {};
+
+  if (!Array.isArray(messages) || !context || typeof context !== "object") {
+    ctx.throw(400, "缺少聊天消息或上下文");
+  }
+
+  const result = await runRandomModeAgent({ messages, context });
+  ctx.body = {
+    resolution: result.parsed,
+    rawText: result.rawText,
+    model: result.model,
+  };
 });
 
 app.listen(PORT, () => {

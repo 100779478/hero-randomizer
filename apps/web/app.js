@@ -1,12 +1,27 @@
 ﻿const { createApp, reactive, ref, computed, onMounted } = Vue;
 const { createRouter, createWebHistory, useRoute, useRouter } = VueRouter;
 const watch = Vue.watch;
+const nextTick = Vue.nextTick;
 const { ElMessage, ElMessageBox } = ElementPlus;
 
 const STORAGE_KEY = "hero-randomizer-session";
 const ROLE_ORDER = { T: 1, C: 2, N: 3 };
 const FIXED_SPECTATORS = ["白付"];
 const ADMIN_USERNAME = "lwz";
+const RANDOM_MODE_HELPERS = window.RandomModeHelpers || {};
+const RANDOM_MODE_CHAT_SKILL = window.RandomModeChatSkill || {};
+const RANDOM_MODE_CHAT_CONTEXT_KEY = RANDOM_MODE_CHAT_SKILL.CONTEXT_STORAGE_KEY || "hero-randomizer-random-chat-context";
+const {
+  parseLegacyHeroString,
+  groupLegacyHeroesByRole,
+  getTeamRoleRequirements,
+  isValidAllocationLegacy,
+  balanceTeamsByLevelLegacy,
+  assignTeamHeroesLegacy,
+  assignFixedTeamLegacy,
+  randomMapPayload,
+  buildRandomModeResult,
+} = RANDOM_MODE_HELPERS;
 
 const session = reactive({ token: "", user: null });
 
@@ -121,6 +136,7 @@ const api = {
   deleteAdminHero(id) { return request(`/api/admin/heroes/${id}`, { method: "DELETE" }); },
   createAdminMap(body) { return request("/api/admin/maps", { method: "POST", body: JSON.stringify(body) }); },
   deleteAdminMap(id) { return request(`/api/admin/maps/${id}`, { method: "DELETE" }); },
+  chatRandomMode(body) { return request("/api/chat/random-v2", { method: "POST", body: JSON.stringify(body) }); },
 };
 
 function normalizePreferredRoles(value) {
@@ -139,6 +155,23 @@ function normalizePreferredRoles(value) {
 
 function decoratePlayer(player) {
   return { ...player, preferredRoles: normalizePreferredRoles(player.preferredRoles || player.preferredRole) };
+}
+
+function createRandomChatContext(payload) {
+  return {
+    mode: "random-v2",
+    user: payload.user || session.user || null,
+    players: (payload.players || []).map(decoratePlayer),
+    heroes: (payload.heroes || []).map((hero) => ({ ...hero })),
+    maps: (payload.maps || []).map((map) => ({ ...map })),
+    rivals: (payload.rivals || []).map((rival) => ({ ...rival })),
+    binds: (payload.binds || []).map((bind) => ({ ...bind })),
+    createdAt: Date.now(),
+  };
+}
+
+function storeRandomChatContext(payload) {
+  sessionStorage.setItem(RANDOM_MODE_CHAT_CONTEXT_KEY, JSON.stringify(createRandomChatContext(payload)));
 }
 
 function parseHeroInput(value) {
@@ -921,18 +954,37 @@ const LandingView = {
   setup() {
     const router = useRouter();
     const showSettings = ref(false);
+    const chatBusy = ref(false);
     const canManageCatalog = computed(() => session.user?.username === ADMIN_USERNAME);
-    function goMode(mode) { router.push(mode.fun ? `/fun/${mode.key}` : `/mode/${mode.key}`); }
+
+    async function openRandomChatFromHome() {
+      chatBusy.value = true;
+      try {
+        const payload = await api.bootstrap();
+        storeRandomChatContext(payload);
+        router.push("/chat/random-v2");
+      } catch (error) {
+        showError(error);
+      } finally {
+        chatBusy.value = false;
+      }
+    }
+
+    function goMode(mode) {
+      router.push(mode.fun ? `/fun/${mode.key}` : `/mode/${mode.key}`);
+    }
+
     function openSettings() { showSettings.value = true; }
     function openAdmin() { router.push("/admin"); }
     function logout() { clearSession(); router.push("/login"); }
-    return { session, showSettings, canManageCatalog, goMode, openSettings, openAdmin, logout, cards: MODE_CARDS };
+    return { session, showSettings, canManageCatalog, chatBusy, goMode, openRandomChatFromHome, openSettings, openAdmin, logout, cards: MODE_CARDS };
   },
   template: `
     <div class="home-page">
       <div class="home-shell home-shell-legacy">
         <div class="home-userbar legacy-userbar">
           <div class="home-user-chip">{{ session.user?.nickname || session.user?.username }}</div>
+          <button type="button" class="home-chat-btn" :disabled="chatBusy" @click="openRandomChatFromHome">{{ chatBusy ? '跳转中...' : '聊天生成' }}</button>
           <button v-if="canManageCatalog" type="button" class="admin-entry-btn" @click="openAdmin">管理台</button>
           <button type="button" class="settings-gear-btn" @click="openSettings" aria-label="打开全局设置">⚙</button>
           <button type="button" @click="logout">退出登录</button>
@@ -956,6 +1008,309 @@ const LandingView = {
         <SettingsModal v-model="showSettings" />
       </div>
       <div class="home-footer">2026 小分队</div>
+    </div>
+  `,
+};
+
+const ChatRandomModeView = {
+  setup() {
+    const router = useRouter();
+    const ready = ref(false);
+    const context = ref(null);
+    const messages = ref([]);
+    const inputMessage = ref("");
+    const busy = ref(false);
+    const resultPayload = ref(null);
+    const chatThreadRef = ref(null);
+    const canSend = computed(() => !!inputMessage.value.trim() && !!context.value && !busy.value);
+    const chatStatusText = computed(() => {
+      if (!ready.value) return "正在加载上下文...";
+      if (busy.value) return "正在调用小分队agent...";
+      if (!context.value) return "等待从首页进入";
+      return "等待输入";
+    });
+    const chatStatusClass = computed(() => (busy.value ? "is-busy" : "is-idle"));
+
+    function seedWelcomeMessage() {
+      messages.value = [{
+        role: "assistant",
+        content: "这里是全随机模式聊天生成页。当前页面会把你的对话发送给小分队agent + skill 解析，你可以直接告诉我参赛玩家和要求，例如：玩家1、玩家2……玩家10，开启随机模式，不允许重复英雄。",
+      }];
+    }
+
+    function restoreContext() {
+      const raw = sessionStorage.getItem(RANDOM_MODE_CHAT_CONTEXT_KEY);
+      sessionStorage.removeItem(RANDOM_MODE_CHAT_CONTEXT_KEY);
+      if (!raw) {
+        ready.value = true;
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.mode === "random-v2") {
+          context.value = parsed;
+          seedWelcomeMessage();
+        }
+      } catch {
+        context.value = null;
+      }
+      ready.value = true;
+    }
+
+    function buildResolvedPlayers(resolution) {
+      const playerMap = new Map((context.value?.players || []).map((player) => [player.name, decoratePlayer(player)]));
+      return (resolution.playerNames || [])
+        .map((name) => {
+          const player = playerMap.get(name);
+          if (!player) return null;
+          const override = resolution.preferredRoleOverrides?.[name];
+          const normalized = override ? normalizePreferredRoles(override) : normalizePreferredRoles(player.preferredRoles || player.preferredRole);
+          return {
+            ...player,
+            preferredRoles: normalized,
+            preferredRole: normalized,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function getGreetingReply(content) {
+      const text = String(content || "").trim();
+      if (!text) return "";
+      if (/^(你好|你好啊|您好|嗨|哈喽|hello|hi)$/i.test(text)) {
+        return "你好，我在。你可以先随便描述想法，等你准备好玩家名单和规则后，我再帮你生成全随机结果。";
+      }
+      if (/^(跟我打招呼|和我打个招呼|先打个招呼)$/i.test(text)) {
+        return "你好，很高兴见到你。你不用急着给名单，想好了人数、玩家和规则后再告诉我就行。";
+      }
+      return "";
+    }
+
+    function scrollChatToBottom() {
+      const element = chatThreadRef.value;
+      if (!element) return;
+      element.scrollTop = element.scrollHeight;
+    }
+
+    async function submitChat() {
+      const content = inputMessage.value.trim();
+      if (!content || !context.value || busy.value) return;
+
+      messages.value = messages.value.concat({ role: "user", content });
+      inputMessage.value = "";
+      const greetingReply = getGreetingReply(content);
+      if (greetingReply) {
+        messages.value = messages.value.concat({ role: "assistant", content: greetingReply });
+        return;
+      }
+      busy.value = true;
+      resultPayload.value = null;
+
+      try {
+        const payload = await api.chatRandomMode({
+          messages: messages.value,
+          context: context.value,
+        });
+        const resolution = payload.resolution || {};
+        messages.value = messages.value.concat({
+          role: "assistant",
+          content: (resolution.questions || []).length
+            ? resolution.questions.join("\n")
+            : `已识别 ${resolution.playerNames?.length || 0} 名玩家：${(resolution.playerNames || []).join("、")}`,
+        });
+
+        if (resolution.needsConfirmation) {
+          return;
+        }
+
+        const result = buildRandomModeResult({
+          players: buildResolvedPlayers(resolution),
+          rivals: context.value.rivals || [],
+          binds: context.value.binds || [],
+          heroes: context.value.heroes || [],
+          maps: context.value.maps || [],
+          allowRepeatHeroes: resolution.allowRepeatHeroes,
+          autoAssignHeroes: resolution.autoAssignHeroes,
+          normalizePreferredRoles,
+        });
+
+        if (result.error) {
+          messages.value = messages.value.concat({ role: "assistant", content: result.error });
+          return;
+        }
+
+        resultPayload.value = result.payload;
+        if (result.payload.summary?.warning) {
+          messages.value = messages.value.concat({ role: "assistant", content: result.payload.summary.warning });
+        }
+      } catch (error) {
+        messages.value = messages.value.concat({ role: "assistant", content: resolveMessage(error, "聊天生成失败") });
+      } finally {
+        busy.value = false;
+      }
+    }
+
+    function resetChat() {
+      resultPayload.value = null;
+      inputMessage.value = "";
+      if (context.value) {
+        seedWelcomeMessage();
+      } else {
+        messages.value = [];
+      }
+    }
+
+    function initialize() {
+      restoreContext();
+    }
+
+    watch(
+      () => messages.value.length,
+      async () => {
+        await nextTick();
+        scrollChatToBottom();
+      },
+    );
+
+    watch(
+      () => busy.value,
+      async () => {
+        await nextTick();
+        scrollChatToBottom();
+      },
+    );
+
+    onMounted(initialize);
+
+    return {
+      router,
+      ready,
+      context,
+      messages,
+      inputMessage,
+      busy,
+      resultPayload,
+      chatThreadRef,
+      canSend,
+      chatStatusText,
+      chatStatusClass,
+      roleLabel,
+      preferredRolesEmoji,
+      sortedTeam,
+      submitChat,
+      resetChat,
+    };
+  },
+  template: `
+    <div class="chat-random-page">
+      <div class="chat-random-shell">
+        <div class="chat-random-topbar">
+          <button class="back-home-btn" type="button" @click="router.push('/home')">返回首页</button>
+          <div class="chat-random-badge">全随机模式聊天生成</div>
+          <button class="small-btn" type="button" @click="router.push('/mode/random-v2')">去全随机页</button>
+        </div>
+
+        <div v-if="!ready" class="chat-random-empty">正在加载聊天上下文...</div>
+
+        <div v-else-if="!context" class="chat-random-empty">
+          <div class="chat-random-empty-title">请从首页右上角的“聊天生成”按钮进入</div>
+          <div class="chat-random-empty-desc">当前页面不保留历史记录，刷新或直接访问时不会自动恢复上一次上下文。</div>
+          <div class="chat-random-empty-actions">
+            <button class="legacy-btn" type="button" @click="router.push('/home')">回到首页</button>
+          </div>
+        </div>
+
+        <div v-else class="chat-random-layout">
+          <section class="chat-panel">
+            <div class="chat-panel-header">
+              <div>
+                <h2>聊天生成</h2>
+                <p>只支持全随机模式，不保存聊天历史。</p>
+              </div>
+              <div class="chat-panel-meta">
+                <span class="chat-meta-chip">小分队agent 已接入</span>
+                <span class="chat-meta-chip chat-status-chip" :class="chatStatusClass">{{ chatStatusText }}</span>
+                <span class="chat-meta-chip">玩家池 {{ context.players.length }}</span>
+                <span class="chat-meta-chip">英雄池 {{ context.heroes.length }}</span>
+              </div>
+            </div>
+
+            <div ref="chatThreadRef" class="chat-thread">
+              <div v-for="(message, index) in messages" :key="index" class="chat-message" :class="'chat-message-' + message.role">
+                <div class="chat-message-role">{{ message.role === 'assistant' ? '系统' : '你' }}</div>
+                <div class="chat-message-content">{{ message.content }}</div>
+              </div>
+              <div v-if="busy" class="chat-message chat-message-assistant chat-message-loading">
+                <div class="chat-message-role">系统</div>
+                <div class="chat-message-content">
+                  <span class="chat-loading-text">正在调用小分队agent 和模型生成结果</span>
+                  <span class="chat-loading-dots"><span></span><span></span><span></span></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="chat-input-box">
+              <textarea
+                v-model="inputMessage"
+                class="legacy-textarea chat-input-textarea"
+                placeholder="例如：玩家1、玩家2……玩家10，开启随机模式，不允许重复英雄，玩家3走奶。"
+                @keydown.enter.exact.prevent="submitChat"
+              ></textarea>
+              <div class="chat-input-actions">
+                <button class="small-btn btn-red" type="button" @click="resetChat">清空会话</button>
+                <button class="legacy-btn" type="button" :disabled="!canSend" @click="submitChat">{{ busy ? '生成中...' : '发送并生成' }}</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="chat-result-panel">
+            <div class="chat-result-header">
+              <h3>生成结果</h3>
+              <p>只在当前页面展示，不写入历史记录。</p>
+            </div>
+
+            <div v-if="!resultPayload" class="chat-result-empty">
+              生成成功后会在这里展示地图、A/B 队结果以及位置信息。
+            </div>
+
+            <div v-else class="chat-result-card">
+              <div class="chat-result-map">地图：{{ resultPayload.selectedMap?.name || resultPayload.selectedMap || '未配置' }}</div>
+              <div class="chat-result-summary">
+                <span class="chat-meta-chip">人数 {{ resultPayload.summary?.totalPlayers || 0 }}</span>
+                <span class="chat-meta-chip">队伍规模 {{ resultPayload.summary?.teamSize || 0 }}v{{ resultPayload.summary?.teamSize || 0 }}</span>
+                <span class="chat-meta-chip">分差 {{ resultPayload.summary?.levelGap || 0 }}</span>
+                <span class="chat-meta-chip">{{ resultPayload.summary?.autoAssignHeroes ? '已分配英雄' : '仅分队' }}</span>
+              </div>
+
+              <table class="result-table">
+                <thead>
+                  <tr v-if="!resultPayload.summary?.autoAssignHeroes"><th>队伍</th><th>玩家</th><th>偏好位置</th></tr>
+                  <tr v-else><th>队伍</th><th>玩家</th><th>英雄</th><th>位置</th><th>偏好</th></tr>
+                </thead>
+                <tbody>
+                  <template v-for="player in sortedTeam(resultPayload.teams.teamA)" :key="'ca-' + player.id">
+                    <tr class="teamA-row">
+                      <td>A 队</td>
+                      <td>{{ player.name }}</td>
+                      <template v-if="!resultPayload.summary?.autoAssignHeroes"><td>{{ preferredRolesEmoji(player.preferredRoles) }}</td></template>
+                      <template v-else><td>{{ player.hero?.name || '-' }}</td><td>{{ player.hero?.roleCode ? roleLabel(player.hero.roleCode) : '-' }}</td><td>{{ preferredRolesEmoji(player.preferredRoles) }}</td></template>
+                    </tr>
+                  </template>
+                  <template v-for="player in sortedTeam(resultPayload.teams.teamB)" :key="'cb-' + player.id">
+                    <tr class="teamB-row">
+                      <td>B 队</td>
+                      <td>{{ player.name }}</td>
+                      <template v-if="!resultPayload.summary?.autoAssignHeroes"><td>{{ preferredRolesEmoji(player.preferredRoles) }}</td></template>
+                      <template v-else><td>{{ player.hero?.name || '-' }}</td><td>{{ player.hero?.roleCode ? roleLabel(player.hero.roleCode) : '-' }}</td><td>{{ preferredRolesEmoji(player.preferredRoles) }}</td></template>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
   `,
 };
@@ -1205,207 +1560,6 @@ const DogView = {
     </div>
   `,
 };
-function hasRivalInTeamByName(player, team, rivals) {
-  return rivals.some((rival) => {
-    if (rival.player1Name === player.name) return team.some((member) => member.name === rival.player2Name);
-    if (rival.player2Name === player.name) return team.some((member) => member.name === rival.player1Name);
-    return false;
-  });
-}
-
-function parseLegacyHeroString(heroStr) {
-  const text = String(heroStr || "").trim();
-  if (!text) return null;
-  const dashIndex = text.indexOf("-");
-  if (dashIndex > 0) {
-    const role = text.slice(0, dashIndex).trim().toUpperCase();
-    const name = text.slice(dashIndex + 1).trim();
-    return { role: ["T", "C", "N"].includes(role) ? role : "C", name: name || text, raw: text };
-  }
-  return { role: "C", name: text, raw: text };
-}
-
-function groupLegacyHeroesByRole(heroes) {
-  return {
-    T: heroes.filter((hero) => hero.role === "T"),
-    C: heroes.filter((hero) => hero.role === "C"),
-    N: heroes.filter((hero) => hero.role === "N"),
-    ALL: heroes.slice(),
-  };
-}
-
-function getTeamRoleRequirements(teamSize) {
-  return teamSize === 6 ? { T: 2, C: 2, N: 2 } : { T: 1, C: 2, N: 2 };
-}
-
-function isValidAllocationLegacy(teamA, teamB, teamSize) {
-  const need = getTeamRoleRequirements(teamSize);
-  const count = (team) => ({
-    T: team.filter((player) => parseLegacyHeroString(player.hero?.displayName || player.hero)?.role === "T").length,
-    C: team.filter((player) => parseLegacyHeroString(player.hero?.displayName || player.hero)?.role === "C").length,
-    N: team.filter((player) => parseLegacyHeroString(player.hero?.displayName || player.hero)?.role === "N").length,
-  });
-  const left = count(teamA);
-  const right = count(teamB);
-  return left.T === need.T && left.C === need.C && left.N === need.N && right.T === need.T && right.C === need.C && right.N === need.N && teamA.every((player) => player.hero) && teamB.every((player) => player.hero);
-}
-
-function balanceTeamsByLevelLegacy(players, rivals) {
-  const teamA = [];
-  const teamB = [];
-  const placed = new Set();
-  const remaining = players.map((player) => ({ ...player, hero: null }));
-
-  rivals.forEach((rival) => {
-    const player1 = remaining.find((player) => player.name === rival.player1Name && !placed.has(player.name));
-    const player2 = remaining.find((player) => player.name === rival.player2Name && !placed.has(player.name));
-    if (player1 && player2) {
-      if (Math.random() < 0.5) {
-        teamA.push(player1);
-        teamB.push(player2);
-      } else {
-        teamA.push(player2);
-        teamB.push(player1);
-      }
-      placed.add(player1.name);
-      placed.add(player2.name);
-    }
-  });
-
-  const left = remaining.filter((player) => !placed.has(player.name));
-  left.sort(() => Math.random() - 0.5);
-  left.sort((leftPlayer, rightPlayer) => rightPlayer.level - leftPlayer.level);
-
-  left.forEach((player) => {
-    const sumA = teamA.reduce((sum, item) => sum + item.level, 0);
-    const sumB = teamB.reduce((sum, item) => sum + item.level, 0);
-    const rivalInA = hasRivalInTeamByName(player, teamA, rivals);
-    const rivalInB = hasRivalInTeamByName(player, teamB, rivals);
-    if (rivalInA && !rivalInB) teamB.push(player);
-    else if (rivalInB && !rivalInA) teamA.push(player);
-    else if (sumA <= sumB) teamA.push(player);
-    else teamB.push(player);
-  });
-
-  while (teamA.length !== teamB.length) {
-    if (teamA.length > teamB.length) {
-      const player = teamA.pop();
-      if (!hasRivalInTeamByName(player, teamB, rivals)) teamB.push(player);
-      else teamA.push(player);
-    } else {
-      const player = teamB.pop();
-      if (!hasRivalInTeamByName(player, teamA, rivals)) teamA.push(player);
-      else teamB.push(player);
-    }
-  }
-
-  return { teamA, teamB };
-}
-
-function assignTeamHeroesLegacy(team, heroGroups, teamSize, binds, usedHeroes) {
-  const used = usedHeroes || new Set();
-  const boundMap = new Map((binds || []).map((bind) => [bind.playerName, bind.heroDisplayName]));
-  const cloned = team.map((player) => ({ ...player, hero: null, preferredRole: normalizePreferredRoles(player.preferredRoles || player.preferredRole) }));
-  const needs = getTeamRoleRequirements(teamSize);
-
-  cloned.forEach((player) => {
-    const heroName = boundMap.get(player.name);
-    if (heroName && !used.has(heroName)) {
-      const heroInfo = parseLegacyHeroString(heroName);
-      if (heroInfo) {
-        player.hero = { name: heroInfo.name, roleCode: heroInfo.role, displayName: heroInfo.raw };
-        used.add(heroName);
-      }
-    }
-  });
-
-  const current = { T: 0, C: 0, N: 0 };
-  cloned.forEach((player) => {
-    const role = player.hero?.roleCode;
-    if (role && current[role] !== undefined) current[role] += 1;
-  });
-
-  const unassigned = cloned.filter((player) => !player.hero);
-  const finalMustT = unassigned.filter((player) => player.preferredRole.join(",") === "T");
-  const finalMustN = unassigned.filter((player) => player.preferredRole.join(",") === "N");
-  const finalMustC = unassigned.filter((player) => player.preferredRole.join(",") === "C");
-  const canT = unassigned.filter((player) => player.preferredRole.includes("T") && !finalMustT.some((item) => item.name === player.name));
-  const canN = unassigned.filter((player) => player.preferredRole.includes("N") && !finalMustN.some((item) => item.name === player.name));
-  const canC = unassigned.filter((player) => player.preferredRole.includes("C") && !finalMustC.some((item) => item.name === player.name));
-
-  function tryAssign(player, role) {
-    if (current[role] >= needs[role]) return false;
-    const available = heroGroups[role].filter((hero) => !used.has(hero.raw));
-    if (!available.length) return false;
-    const hero = available[Math.floor(Math.random() * available.length)];
-    player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
-    used.add(hero.raw);
-    current[role] += 1;
-    return true;
-  }
-
-  let success = true;
-  [{ role: "T", list: finalMustT }, { role: "N", list: finalMustN }, { role: "C", list: finalMustC }].forEach((group) => {
-    group.list.forEach((player) => {
-      if (!player.hero && !tryAssign(player, group.role)) success = false;
-    });
-  });
-  if (!success) return null;
-
-  shuffle([...canT, ...canN, ...canC]).forEach((player) => {
-    if (player.hero) return;
-    const roles = player.preferredRole.filter((role) => current[role] < needs[role]);
-    if (!roles.length) return;
-    tryAssign(player, roles[Math.floor(Math.random() * roles.length)]);
-  });
-
-  shuffle(cloned.filter((player) => !player.hero)).forEach((player) => {
-    const roles = ["T", "N", "C"].filter((role) => current[role] < needs[role]);
-    if (!roles.length) {
-      const pool = heroGroups.ALL.filter((hero) => !used.has(hero.raw));
-      if (pool.length) {
-        const hero = pool[Math.floor(Math.random() * pool.length)];
-        player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
-        used.add(hero.raw);
-      }
-      return;
-    }
-    const role = roles[Math.floor(Math.random() * roles.length)];
-    if (!tryAssign(player, role)) {
-      roles.forEach((item) => { if (!player.hero) tryAssign(player, item); });
-    }
-  });
-
-  return cloned.map((player) => ({ ...player, preferredRoles: normalizePreferredRoles(player.preferredRole) }));
-}
-
-function assignFixedTeamLegacy(team, heroPool, needT, needC, needN, allowCrossRepeat, globalUsed) {
-  const result = [];
-  const roles = [];
-  for (let index = 0; index < needT; index += 1) roles.push("T");
-  for (let index = 0; index < needC; index += 1) roles.push("C");
-  for (let index = 0; index < needN; index += 1) roles.push("N");
-  const shuffledTeam = shuffle(team.map((player) => ({ ...player })));
-
-  for (let index = 0; index < shuffledTeam.length; index += 1) {
-    const role = roles[index];
-    let candidates = heroPool.filter((hero) => hero.startsWith(role + "-")).map((hero) => parseLegacyHeroString(hero)).filter(Boolean);
-    candidates = candidates.filter((hero) => !result.some((item) => item.hero?.name === hero.name));
-    if (!allowCrossRepeat) candidates = candidates.filter((hero) => !globalUsed.has(hero.name));
-    if (!candidates.length) return null;
-    const hero = candidates[Math.floor(Math.random() * candidates.length)];
-    result.push({ ...shuffledTeam[index], hero: { name: hero.name, roleCode: hero.role, displayName: hero.raw } });
-    globalUsed.add(hero.name);
-  }
-
-  return result;
-}
-
-function randomMapPayload(maps) {
-  if (!maps.length) return null;
-  const map = maps[Math.floor(Math.random() * maps.length)];
-  return { id: map.id, name: map.name };
-}
 function workspaceSetup() {
   const route = useRoute();
   const router = useRouter();
@@ -1491,6 +1645,11 @@ function workspaceSetup() {
     });
     const allowedNames = new Set(bootstrap.chaosPlayers.map((player) => player.name));
     chaosSelectedNames.value = chaosSelectedNames.value.filter((name) => allowedNames.has(name));
+  }
+
+  function openRandomChat() {
+    storeRandomChatContext(bootstrap);
+    router.push("/chat/random-v2");
   }
 
   async function savePlayerRoles(player, roles) {
@@ -1618,75 +1777,30 @@ function workspaceSetup() {
   async function startRandomDraw() {
     if (![10, 12].includes(selectedIds.value.length)) return alert("人数错误，5v5 需要 10 人，6v6 需要 12 人");
 
-    const sourcePlayers = selectedPlayers.value.map((player) => ({
-      ...player,
-      preferredRole: normalizePreferredRoles(player.preferredRoles),
-      preferredRoles: normalizePreferredRoles(player.preferredRoles),
-      hero: null,
-    }));
-    const balancedTeams = balanceTeamsByLevelLegacy(sourcePlayers, bootstrap.rivals || []);
-    const teamSize = selectedIds.value.length === 10 ? 5 : 6;
-    const heroPool = bootstrap.heroes.map((hero) => heroDisplay(hero));
-    const allHeroes = heroPool.map(parseLegacyHeroString).filter(Boolean);
-    const heroGroups = groupLegacyHeroesByRole(allHeroes);
-
     resultModal.value = { rolling: true, payload: null };
     const timer = startRollAnimation();
     await new Promise((resolve) => setTimeout(resolve, 1400));
     if (timer) clearInterval(timer);
 
-    if (!randomHero.value) {
-      resultModal.value = {
-        rolling: false,
-        payload: {
-          selectedMap: randomMapPayload(bootstrap.maps),
-          teams: { teamA: balancedTeams.teamA, teamB: balancedTeams.teamB },
-          summary: { autoAssignHeroes: false },
-        },
-      };
-      return;
-    }
+    const result = buildRandomModeResult({
+      players: selectedPlayers.value,
+      rivals: bootstrap.rivals || [],
+      binds: bootstrap.binds || [],
+      heroes: bootstrap.heroes || [],
+      maps: bootstrap.maps || [],
+      allowRepeatHeroes: allowRepeat.value,
+      autoAssignHeroes: randomHero.value,
+      normalizePreferredRoles,
+    });
 
-    if (!allowRepeat.value) {
-      const totalNeeds = teamSize === 5 ? { T: 2, C: 4, N: 4 } : { T: 4, C: 4, N: 4 };
-      if (heroGroups.T.length < totalNeeds.T) return closeResult(), alert(`坦克总数不足，需要 ${totalNeeds.T}`);
-      if (heroGroups.C.length < totalNeeds.C) return closeResult(), alert(`输出总数不足，需要 ${totalNeeds.C}`);
-      if (heroGroups.N.length < totalNeeds.N) return closeResult(), alert(`辅助总数不足，需要 ${totalNeeds.N}`);
-    } else {
-      const needs = getTeamRoleRequirements(teamSize);
-      if (heroGroups.T.length < needs.T) return closeResult(), alert(`坦克不足，每队需要 ${needs.T}`);
-      if (heroGroups.C.length < needs.C) return closeResult(), alert(`输出不足，每队需要 ${needs.C}`);
-      if (heroGroups.N.length < needs.N) return closeResult(), alert(`辅助不足，每队需要 ${needs.N}`);
-    }
-
-    let finalA = null;
-    let finalB = null;
-    let valid = false;
-    for (let retry = 0; retry <= 10; retry += 1) {
-      const sharedUsed = new Set();
-      finalA = assignTeamHeroesLegacy(balancedTeams.teamA, heroGroups, teamSize, bootstrap.binds || [], allowRepeat.value ? new Set() : sharedUsed);
-      finalB = assignTeamHeroesLegacy(balancedTeams.teamB, heroGroups, teamSize, bootstrap.binds || [], allowRepeat.value ? new Set() : sharedUsed);
-      if (!finalA || !finalB) continue;
-      valid = isValidAllocationLegacy(finalA, finalB, teamSize);
-      if (valid) break;
-    }
-
-    if (!finalA || !finalB) {
+    if (result.error) {
       closeResult();
-      return alert("当前英雄池或位置偏好无法完成分配");
+      return alert(result.error);
     }
 
-    resultModal.value = {
-      rolling: false,
-      payload: {
-        selectedMap: randomMapPayload(bootstrap.maps),
-        teams: { teamA: finalA, teamB: finalB },
-        summary: { autoAssignHeroes: true },
-      },
-    };
-
-    if (!valid) {
-      alert("位置分布未完全符合旧版要求，已返回当前最接近结果，可继续重抽。");
+    resultModal.value = { rolling: false, payload: result.payload };
+    if (result.payload.summary?.warning) {
+      alert(result.payload.summary.warning);
     }
   }
 
@@ -1815,7 +1929,7 @@ function workspaceSetup() {
     togglePlayerRole, createRandomPlayer, createFixedPlayer, removePlayer,
     addHero, resetHeroes, removeHero, addMap, removeMap, addSelectedPlayer, removeSelectedPlayer,
     addRival, removeRival, addBind, removeBind, startRandomDraw, assignToTeam, removeFromTeam,
-    clearTeams, startFixedDraw, toggleChaos, clearChaosSelection, startChaosBalance, closeResult, loadBootstrap, openSettings, openAdmin, logout,
+    clearTeams, startFixedDraw, toggleChaos, clearChaosSelection, startChaosBalance, closeResult, loadBootstrap, openRandomChat, openSettings, openAdmin, logout,
   };
 }
 const workspaceTemplate = `
@@ -1833,6 +1947,10 @@ const workspaceTemplate = `
         <div class="feature-switches">
           <span class="switch-label"><input type="checkbox" v-model="allowRepeat"> 允许两队重复英雄</span>
           <span class="switch-label"><input type="checkbox" v-model="randomHero"> 自动分配英雄</span>
+        </div>
+        <div class="random-chat-entry">
+          <button class="legacy-btn random-chat-entry-btn" type="button" @click="openRandomChat">AI 聊天生成</button>
+          <div class="random-chat-entry-tip">跳转到独立聊天页，用自然语言生成本次全随机结果，不保存历史记录。</div>
         </div>
 
         <div class="hero-pool-management">
@@ -2081,6 +2199,7 @@ const routes = [
   { path: "/", redirect: () => (session.token ? "/home" : "/login") },
   { path: "/home", component: LandingView, meta: { requiresAuth: true } },
   { path: "/admin", component: AdminView, meta: { requiresAuth: true } },
+  { path: "/chat/random-v2", component: ChatRandomModeView, meta: { requiresAuth: true } },
   { path: "/mode/:mode", component: WorkspaceView, meta: { requiresAuth: true } },
   { path: "/fun/dog", component: DogView, meta: { requiresAuth: true } },
   { path: "/:pathMatch(.*)*", redirect: () => (session.token ? "/home" : "/login") },
