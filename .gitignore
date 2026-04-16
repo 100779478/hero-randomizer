@@ -1,6 +1,9 @@
 node_modules
 dist
 apps/server/data/*.db
+apps/server/data/*.db-wal
+apps/server/data/*.db-shm
 apps/server/data/*.sqlite
 apps/server/data/*.sqlite3
 .env
+node-agent-backup/

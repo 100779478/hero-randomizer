@@ -1,0 +1,16 @@
+{
+  "name": "local-node-agent",
+  "version": "1.0.0",
+  "description": "本地运行的 Node.js Agent 命令行工具",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js",
+    "mock-api": "node mock-api-server.js",
+    "generate-api-docs": "node scripts/generate-api-docs.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

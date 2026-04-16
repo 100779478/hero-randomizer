@@ -1,0 +1,146 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "用户接口 Demo",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/users": {
+      "post": {
+        "operationId": "create_user",
+        "summary": "创建一个新用户。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "用户姓名，例如 张三。"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "用户邮箱，例如 zhangsan@example.com。"
+                  },
+                  "role": {
+                    "type": "string",
+                    "description": "用户角色，例如 admin、trader、viewer。"
+                  }
+                },
+                "required": ["name", "email", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "返回创建结果和新用户信息。"
+          }
+        }
+      },
+      "get": {
+        "operationId": "list_users",
+        "summary": "查询用户列表，可按角色筛选。",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "description": "可选，按角色筛选，例如 admin、trader、viewer。",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "返回用户列表和总数。"
+          }
+        }
+      }
+    },
+    "/api/users/{userId}": {
+      "get": {
+        "operationId": "get_user",
+        "summary": "按用户 ID 查询单个用户详情。",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "用户 ID，例如 user_1776072605468。",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "返回指定用户的详细信息。"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete_user",
+        "summary": "删除指定用户。",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "要删除的用户 ID。",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "返回删除结果和被删除的用户 ID。"
+          }
+        }
+      }
+    },
+    "/api/users/{userId}/role": {
+      "patch": {
+        "operationId": "update_user_role",
+        "summary": "修改指定用户的角色。",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "要修改的用户 ID。",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "description": "新的角色，例如 admin、trader、viewer。"
+                  }
+                },
+                "required": ["role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "返回更新后的用户信息。"
+          }
+        }
+      }
+    }
+  }
+}
