@@ -292,6 +292,13 @@ addRoute("PATCH", "/api/auth/profile", async (ctx) => {
   ctx.body = { user: sanitizeUser(updatedUser) };
 });
 
+addRoute("POST", "/api/catalog/sync-players", async (ctx) => {
+  await requireAuth(ctx);
+  if (ctx.state.user.username === SHARED_CATALOG_USERNAME) ctx.throw(403, "默认账号无需同步玩家列表");
+  const syncedCount = syncPlayersFromAdminToUser(ctx.state.user.id);
+  ctx.body = { ...fetchBootstrap(ctx.state.user.id), syncedCount };
+});
+
 addRoute("GET", "/api/admin/dashboard", async (ctx) => {
   await requireCatalogAdmin(ctx);
   ctx.body = fetchAdminDashboard();
@@ -512,6 +519,7 @@ addRoute("POST", "/api/draw", async (ctx) => {
 app.listen(PORT, () => {
   console.log(`Koa API listening on http://localhost:${PORT}`);
 });
+
 
 
 

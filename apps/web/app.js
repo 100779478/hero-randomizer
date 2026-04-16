@@ -116,6 +116,7 @@ const api = {
   updateUser(id, body) { return request(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }); },
   deleteUser(id) { return request(`/api/admin/users/${id}`, { method: "DELETE" }); },
   syncUserPlayers(id) { return request(`/api/admin/users/${id}/sync-players`, { method: "POST" }); },
+  syncMyPlayers() { return request("/api/catalog/sync-players", { method: "POST" }); },
   createAdminHero(body) { return request("/api/admin/heroes", { method: "POST", body: JSON.stringify(body) }); },
   deleteAdminHero(id) { return request(`/api/admin/heroes/${id}`, { method: "DELETE" }); },
   createAdminMap(body) { return request("/api/admin/maps", { method: "POST", body: JSON.stringify(body) }); },
@@ -321,6 +322,8 @@ const SettingsModal = {
       return players.value.filter((player) => !keyword || player.name.toLowerCase().includes(keyword));
     });
 
+    const canSyncFromCatalog = computed(() => session.user?.username && session.user.username !== ADMIN_USERNAME);
+
     function closeModal() {
       emit("update:modelValue", false);
     }
@@ -428,6 +431,29 @@ const SettingsModal = {
       }
     }
 
+    async function syncMyPlayersFromCatalog() {
+      if (!canSyncFromCatalog.value) return alert("默认账号无需同步玩家列表");
+      const confirmed = await confirmAction(
+        "将主账户 lwz 的玩家列表覆盖同步到当前账号。当前账号现有玩家、敌对关系、专属英雄绑定会被清空，后续修改仍只影响自己的数据。确定继续吗？",
+        "同步主账户玩家列表",
+      );
+      if (!confirmed) return;
+      saving.value = true;
+      errorMessage.value = "";
+      try {
+        const payload = await api.syncMyPlayers();
+        applyPlayers(payload.players || []);
+        summary.heroCount = (payload.heroes || []).length;
+        summary.mapCount = (payload.maps || []).length;
+        summary.historyCount = (payload.history || []).length;
+        emit("updated");
+        showSuccess(`已同步 ${Number(payload.syncedCount) || 0} 名玩家`);
+      } catch (error) {
+        showError(error);
+      } finally {
+        saving.value = false;
+      }
+    }
     async function saveAccount() {
       const nickname = String(accountForm.nickname || "").trim();
       const password = String(accountForm.password || "").trim();
@@ -473,6 +499,7 @@ const SettingsModal = {
       summary,
       playerForm,
       accountForm,
+      canSyncFromCatalog,
       preferredRolesText,
       closeModal,
       toggleNewPlayerRole,
@@ -481,6 +508,7 @@ const SettingsModal = {
       addPlayer,
       savePlayer,
       removePlayer,
+      syncMyPlayersFromCatalog,
       saveAccount,
     };
   },
@@ -580,8 +608,12 @@ const SettingsModal = {
                   <input v-model="accountForm.confirmPassword" class="legacy-input" type="password" placeholder="再次输入新密码" autocomplete="new-password" />
                 </label>
               </div>
-              <div class="settings-account-hint">不填写新密码时，仅更新昵称；填写密码时需要至少 6 位。</div>
+              <div class="settings-account-hint">
+                不填写新密码时，仅更新昵称；填写密码时需要至少 6 位。
+                <template v-if="canSyncFromCatalog">同步主账户玩家会覆盖当前账号玩家列表，并清空相关敌对关系与专属英雄绑定。</template>
+              </div>
               <div class="settings-account-actions">
+                <button v-if="canSyncFromCatalog" class="small-btn" type="button" :disabled="saving" @click="syncMyPlayersFromCatalog">{{ saving ? '处理中...' : '同步主账户玩家' }}</button>
                 <button class="small-btn btn-green" type="button" :disabled="saving" @click="saveAccount">{{ saving ? '处理中...' : '保存账号信息' }}</button>
               </div>
             </div>
@@ -2064,6 +2096,7 @@ const app = createApp({ template: "<router-view :key='$route.fullPath'></router-
 app.use(router);
 app.use(ElementPlus);
 app.mount("#app");
+
 
 
 
