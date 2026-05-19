@@ -83,8 +83,27 @@ dependency_fingerprint() {
 
 if [ -d "${APP_DIR}/.git" ] && [ "${SKIP_PULL}" != "1" ]; then
   log "Pulling latest code"
+
+  # 暂存数据库文件，确保 pull 不会覆盖服务器数据
+  DB_STASH_DIR=""
+  if [ -d "${DATA_DIR}" ]; then
+    DB_STASH_DIR="$(mktemp -d)"
+    cp -a "${DATA_DIR}"/*.db "${DATA_DIR}"/*.db-shm "${DATA_DIR}"/*.db-wal "${DB_STASH_DIR}/" 2>/dev/null || true
+  fi
+
   git fetch --all --prune
+
+  # 丢弃可能被追踪的数据库运行时文件的本地变更
+  git checkout -- "${DATA_DIR}/app.db-shm" "${DATA_DIR}/app.db-wal" 2>/dev/null || true
+
   git pull --ff-only
+
+  # 恢复数据库文件，以服务器为准
+  if [ -n "${DB_STASH_DIR}" ] && [ -d "${DB_STASH_DIR}" ]; then
+    cp -a "${DB_STASH_DIR}"/*.db "${DB_STASH_DIR}"/*.db-shm "${DB_STASH_DIR}"/*.db-wal "${DATA_DIR}/" 2>/dev/null || true
+    rm -rf "${DB_STASH_DIR}"
+    log "Database files restored (server data preserved)"
+  fi
 else
   log "Skipping git pull"
 fi
