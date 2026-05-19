@@ -148,6 +148,7 @@
     const cloned = team.map((player) => ({ ...player, hero: null, preferredRole: normalizeRoles(player.preferredRoles || player.preferredRole) }));
     const needs = getTeamRoleRequirements(teamSize);
 
+    // Pre-assign bound heroes
     cloned.forEach((player) => {
       const heroName = boundMap.get(player.name);
       if (heroName && !used.has(heroName)) {
@@ -159,49 +160,53 @@
       }
     });
 
-    const current = { T: 0, C: 0, N: 0 };
-    cloned.forEach((player) => {
-      const role = player.hero?.roleCode;
-      if (role && current[role] !== undefined) current[role] += 1;
-    });
-
-    const unassigned = cloned.filter((player) => !player.hero);
-    const finalMustT = unassigned.filter((player) => player.preferredRole.join(",") === "T");
-    const finalMustN = unassigned.filter((player) => player.preferredRole.join(",") === "N");
-    const finalMustC = unassigned.filter((player) => player.preferredRole.join(",") === "C");
-    const canT = unassigned.filter((player) => player.preferredRole.includes("T") && !finalMustT.some((item) => item.name === player.name));
-    const canN = unassigned.filter((player) => player.preferredRole.includes("N") && !finalMustN.some((item) => item.name === player.name));
-    const canC = unassigned.filter((player) => player.preferredRole.includes("C") && !finalMustC.some((item) => item.name === player.name));
+    // Re-query role counts (never use a stale snapshot)
+    function currentRoles() {
+      return {
+        T: cloned.filter((p) => p.hero?.roleCode === "T").length,
+        C: cloned.filter((p) => p.hero?.roleCode === "C").length,
+        N: cloned.filter((p) => p.hero?.roleCode === "N").length,
+      };
+    }
 
     function tryAssign(player, role) {
-      if (current[role] >= needs[role]) return false;
+      const cur = currentRoles();
+      if (cur[role] >= needs[role]) return false;
       const available = heroGroups[role].filter((hero) => !used.has(hero.raw));
       if (!available.length) return false;
       const hero = available[Math.floor(Math.random() * available.length)];
       player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
       used.add(hero.raw);
-      current[role] += 1;
       return true;
     }
 
-    let success = true;
-    [{ role: "T", list: finalMustT }, { role: "N", list: finalMustN }, { role: "C", list: finalMustC }].forEach((group) => {
-      group.list.forEach((player) => {
-        if (!player.hero && !tryAssign(player, group.role)) success = false;
-      });
-    });
-    if (!success) return null;
+    const unassigned = () => cloned.filter((player) => !player.hero);
 
-    shuffle([].concat(canT, canN, canC)).forEach((player) => {
-      if (player.hero) return;
-      const roles = player.preferredRole.filter((role) => current[role] < needs[role]);
-      if (!roles.length) return;
-      tryAssign(player, roles[Math.floor(Math.random() * roles.length)]);
+    // Pass 1: Single-preference players (try preferred role first, fall through to Pass 3 if full)
+    ["T", "N", "C"].forEach((role) => {
+      unassigned()
+        .filter((player) => player.preferredRole.length === 1 && player.preferredRole[0] === role)
+        .forEach((player) => {
+          tryAssign(player, role);
+        });
     });
 
-    shuffle(cloned.filter((player) => !player.hero)).forEach((player) => {
-      const roles = ["T", "N", "C"].filter((role) => current[role] < needs[role]);
-      if (!roles.length) {
+    // Pass 2: Multi-preference players (try preferred roles that still need filling)
+    shuffle(unassigned().filter((player) => player.preferredRole.length > 1)).forEach((player) => {
+      const roles = player.preferredRole.filter((role) => currentRoles()[role] < needs[role]);
+      if (roles.length) {
+        tryAssign(player, roles[Math.floor(Math.random() * roles.length)]);
+      }
+      // If no preferred roles need filling, player stays unassigned for Pass 3
+    });
+
+    // Pass 3: Fill remaining players into any role that still needs filling
+    // Force-assign to unfilled roles regardless of player preference
+    shuffle(unassigned()).forEach((player) => {
+      const cur = currentRoles();
+      const unfilled = ["T", "N", "C"].filter((role) => cur[role] < needs[role]);
+      if (!unfilled.length) {
+        // All role requirements met, assign from any remaining hero
         const pool = heroGroups.ALL.filter((hero) => !used.has(hero.raw));
         if (pool.length) {
           const hero = pool[Math.floor(Math.random() * pool.length)];
@@ -210,11 +215,24 @@
         }
         return;
       }
-      const role = roles[Math.floor(Math.random() * roles.length)];
-      if (!tryAssign(player, role)) {
-        roles.forEach((item) => {
-          if (!player.hero) tryAssign(player, item);
-        });
+      // Try unfilled roles, preferring player's own preferences first
+      const ordered = unfilled.filter((role) => player.preferredRole.includes(role))
+        .concat(unfilled.filter((role) => !player.preferredRole.includes(role)));
+      for (const role of ordered) {
+        const available = heroGroups[role].filter((hero) => !used.has(hero.raw));
+        if (available.length) {
+          const hero = available[Math.floor(Math.random() * available.length)];
+          player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
+          used.add(hero.raw);
+          return;
+        }
+      }
+      // Last resort: any hero
+      const pool = heroGroups.ALL.filter((hero) => !used.has(hero.raw));
+      if (pool.length) {
+        const hero = pool[Math.floor(Math.random() * pool.length)];
+        player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
+        used.add(hero.raw);
       }
     });
 
@@ -295,7 +313,7 @@
     let finalA = null;
     let finalB = null;
     let valid = false;
-    for (let retry = 0; retry <= 10; retry += 1) {
+    for (let retry = 0; retry < 50; retry += 1) {
       const sharedUsed = new Set();
       finalA = assignTeamHeroesLegacy(balancedTeams.teamA, heroGroups, teamSize, options.binds || [], allowRepeatHeroes ? new Set() : sharedUsed, normalizePreferredRoles);
       finalB = assignTeamHeroesLegacy(balancedTeams.teamB, heroGroups, teamSize, options.binds || [], allowRepeatHeroes ? new Set() : sharedUsed, normalizePreferredRoles);
@@ -304,8 +322,8 @@
       if (valid) break;
     }
 
-    if (!finalA || !finalB) {
-      return { error: "当前英雄池或位置偏好无法完成分配" };
+    if (!finalA || !finalB || !valid) {
+      return { error: "英雄分配未能满足角色配置要求，请扩大英雄池或允许两队重复英雄后重试" };
     }
 
     return {
@@ -318,7 +336,7 @@
           levelGap,
           totalPlayers: sourcePlayers.length,
           teamSize,
-          warning: valid ? "" : "位置分布未完全符合旧版要求，已返回当前最接近结果，可继续重抽。",
+          warning: "",
         },
       },
     };

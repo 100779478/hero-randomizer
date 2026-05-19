@@ -192,18 +192,16 @@ function assignTeamHeroes(team, heroes, options) {
   });
 
   const assignRoleToCandidates = (role, candidates) => {
-    let current = assignedByRole()[role];
     const needed = requirements[role];
     const queue = shuffle(candidates.filter((player) => !player.hero));
 
-    while (current < needed && queue.length) {
+    while (assignedByRole()[role] < needed && queue.length) {
       const player = queue.shift();
       const pool = availableHeroesByRole(heroes, usedSet)[role];
       const assigned = assignFromPool(player, pool, usedSet);
       if (!assigned) {
         break;
       }
-      current += 1;
     }
   };
 
@@ -219,19 +217,20 @@ function assignTeamHeroes(team, heroes, options) {
 
   remainingPlayers.forEach((player) => {
     const current = assignedByRole();
-    const desiredOrder = ["T", "N", "C"]
-      .filter((role) => current[role] < requirements[role] && player.preferredRoles.includes(role))
-      .concat(["T", "N", "C"].filter((role) => current[role] < requirements[role] && !player.preferredRoles.includes(role)))
-      .concat(["T", "N", "C"]);
+    const unfilled = ["T", "N", "C"].filter((role) => current[role] < requirements[role]);
 
-    for (const role of desiredOrder) {
-      const pool = availableHeroesByRole(heroes, usedSet)[role];
-      const assigned = assignFromPool(player, pool, usedSet);
-      if (assigned) {
-        return;
+    if (unfilled.length) {
+      // Try unfilled roles, preferring player's own preferences first
+      const ordered = unfilled.filter((role) => player.preferredRoles.includes(role))
+        .concat(unfilled.filter((role) => !player.preferredRoles.includes(role)));
+      for (const role of ordered) {
+        const pool = availableHeroesByRole(heroes, usedSet)[role];
+        const assigned = assignFromPool(player, pool, usedSet);
+        if (assigned) return;
       }
     }
 
+    // All role requirements met or no role pool available: assign from any hero
     assignFromPool(player, availableHeroesByRole(heroes, usedSet).ALL, usedSet);
   });
 }
@@ -253,6 +252,21 @@ function serializePlayer(player) {
   };
 }
 
+function validateHeroAllocation(teamA, teamB, teamSize) {
+  const req = roleRequirements(teamSize);
+  if (!req) return true;
+  const count = (team) => ({
+    T: team.filter((p) => p.hero?.roleCode === "T").length,
+    C: team.filter((p) => p.hero?.roleCode === "C").length,
+    N: team.filter((p) => p.hero?.roleCode === "N").length,
+  });
+  const a = count(teamA);
+  const b = count(teamB);
+  return a.T === req.T && a.C === req.C && a.N === req.N
+    && b.T === req.T && b.C === req.C && b.N === req.N
+    && teamA.every((p) => p.hero) && teamB.every((p) => p.hero);
+}
+
 function drawMatch(input) {
   const {
     mode,
@@ -272,8 +286,19 @@ function drawMatch(input) {
 
   const teamSize = players.length / 2;
   const useRivals = mode === "random-v2";
-  let teams;
 
+  if (!allowRepeatHeroes) {
+    const req = roleRequirements(teamSize);
+    if (req) {
+      const heroCounts = { T: 0, C: 0, N: 0 };
+      heroes.forEach((h) => { if (heroCounts[h.roleCode] !== undefined) heroCounts[h.roleCode] += 1; });
+      if (heroCounts.T < req.T * 2) throw new Error(`坦克英雄总数不足，需要 ${req.T * 2}，当前 ${heroCounts.T}`);
+      if (heroCounts.C < req.C * 2) throw new Error(`输出英雄总数不足，需要 ${req.C * 2}，当前 ${heroCounts.C}`);
+      if (heroCounts.N < req.N * 2) throw new Error(`辅助英雄总数不足，需要 ${req.N * 2}，当前 ${heroCounts.N}`);
+    }
+  }
+
+  let teams;
   if (mode === "fixed-team") {
     teams = fixedTeams(players, manualTeams);
     if (teams.teamA.length !== teams.teamB.length || teams.teamA.length === 0) {
@@ -283,28 +308,44 @@ function drawMatch(input) {
     teams = autoBalanceTeams(players, useRivals ? rivals : []);
   }
 
-  const heroRows = heroes.map((hero) => ({
-    ...hero,
-    key: allowRepeatHeroes ? `${hero.id}-${Math.random().toString(36).slice(2)}` : `${hero.id}-strict`,
-  }));
-  const bindMap = new Map();
-
-  if (mode === "random-v2") {
-    binds.forEach((bind) => {
-      const matchedHero = heroRows.find((hero) => hero.id === bind.heroId);
-      if (matchedHero) {
-        bindMap.set(bind.playerId, matchedHero);
-      }
-    });
-  }
-
   if (autoAssignHeroes) {
-    const sharedUsedSet = new Set();
-    const teamAUsed = allowRepeatHeroes ? new Set() : sharedUsedSet;
-    const teamBUsed = allowRepeatHeroes ? new Set() : sharedUsedSet;
+    const heroRows = heroes.map((hero) => ({
+      ...hero,
+      key: allowRepeatHeroes ? `${hero.id}-${Math.random().toString(36).slice(2)}` : `${hero.id}-strict`,
+    }));
+    const bindMap = new Map();
 
-    assignTeamHeroes(teams.teamA, heroRows, { usedSet: teamAUsed, bindMap });
-    assignTeamHeroes(teams.teamB, heroRows, { usedSet: teamBUsed, bindMap });
+    if (mode === "random-v2") {
+      binds.forEach((bind) => {
+        const matchedHero = heroRows.find((hero) => hero.id === bind.heroId);
+        if (matchedHero) {
+          bindMap.set(bind.playerId, matchedHero);
+        }
+      });
+    }
+
+    let valid = false;
+    for (let retry = 0; retry < 50; retry += 1) {
+      const sharedUsedSet = new Set();
+      const teamAUsed = allowRepeatHeroes ? new Set() : sharedUsedSet;
+      const teamBUsed = allowRepeatHeroes ? new Set() : sharedUsedSet;
+
+      // Reset hero assignments
+      teams.teamA.forEach((p) => { p.hero = null; });
+      teams.teamB.forEach((p) => { p.hero = null; });
+
+      assignTeamHeroes(teams.teamA, heroRows, { usedSet: teamAUsed, bindMap });
+      assignTeamHeroes(teams.teamB, heroRows, { usedSet: teamBUsed, bindMap });
+
+      if (validateHeroAllocation(teams.teamA, teams.teamB, teamSize)) {
+        valid = true;
+        break;
+      }
+    }
+
+    if (!valid) {
+      throw new Error("英雄分配未能满足角色配置要求，请扩大英雄池或允许两队重复英雄后重试");
+    }
   }
 
   const selectedMap = maps.length ? shuffle(maps)[0] : null;
