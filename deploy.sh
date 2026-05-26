@@ -171,7 +171,7 @@ install_dependencies_if_needed() {
 }
 
 wait_for_healthcheck() {
-  local app_port="${APP_PORT:-${PORT:-3000}}"
+  local app_port="${APP_PORT:-${PORT:-9000}}"
   local health_url="${HEALTH_URL:-http://127.0.0.1:${app_port}${HEALTH_PATH}}"
 
   log "Waiting for health check: ${health_url}"

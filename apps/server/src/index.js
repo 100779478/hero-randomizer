@@ -9,7 +9,7 @@ const { hashPassword, verifyPassword } = require("./utils/password");
 const { createToken, createExpiry } = require("./utils/token");
 const { drawMatch } = require("./services/randomizer-service");
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 9000);
 const REGISTRATION_INVITE_CODE = String(process.env.REGISTRATION_INVITE_CODE || "acky0629").trim();
 const db = createDatabase();
 const webRoot = path.resolve(__dirname, "../../web");
