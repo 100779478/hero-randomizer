@@ -68,6 +68,14 @@
     return teamSize === 6 ? { T: 2, C: 2, N: 2 } : { T: 1, C: 2, N: 2 };
   }
 
+  function roleLabel(role) {
+    return { T: "坦克", C: "输出", N: "辅助" }[role] || role;
+  }
+
+  function formatRoleRequirements(requirements) {
+    return `${requirements.T}${roleLabel("T")}/${requirements.C}${roleLabel("C")}/${requirements.N}${roleLabel("N")}`;
+  }
+
   function isValidAllocationLegacy(teamA, teamB, teamSize) {
     const need = getTeamRoleRequirements(teamSize);
     const count = (team) => ({
@@ -141,102 +149,106 @@
     return { teamA, teamB };
   }
 
+  function buildRoleAssignmentPlanLegacy(team, requirements, boundHeroMap) {
+    const remaining = { ...requirements };
+    const plan = new Map();
+    const unboundPlayers = [];
+
+    for (const player of team) {
+      const boundHero = boundHeroMap.get(player.name);
+      if (!boundHero) {
+        unboundPlayers.push(player);
+        continue;
+      }
+
+      if (!player.preferredRole.includes(boundHero.role)) {
+        return { error: `玩家「${player.name}」的专属英雄职责与位置偏好冲突，请调整偏好或专属英雄后重试` };
+      }
+
+      remaining[boundHero.role] -= 1;
+      if (remaining[boundHero.role] < 0) {
+        return { error: `当前队伍的玩家位置偏好和专属英雄无法满足 ${formatRoleRequirements(requirements)} 阵容要求` };
+      }
+
+      plan.set(player.name, boundHero.role);
+    }
+
+    function backtrack(players) {
+      if (!players.length) {
+        return Object.values(remaining).every((count) => count === 0);
+      }
+
+      const orderedPlayers = shuffle(players).sort((left, right) => {
+        const leftOptions = left.preferredRole.filter((role) => remaining[role] > 0).length;
+        const rightOptions = right.preferredRole.filter((role) => remaining[role] > 0).length;
+        return leftOptions - rightOptions;
+      });
+      const [player, ...rest] = orderedPlayers;
+      const roleOptions = shuffle(player.preferredRole.filter((role) => remaining[role] > 0));
+
+      if (!roleOptions.length) {
+        return false;
+      }
+
+      for (const role of roleOptions) {
+        remaining[role] -= 1;
+        plan.set(player.name, role);
+        if (backtrack(rest)) {
+          return true;
+        }
+        plan.delete(player.name);
+        remaining[role] += 1;
+      }
+
+      return false;
+    }
+
+    if (!backtrack(unboundPlayers)) {
+      return { error: `当前队伍的玩家位置偏好无法满足 ${formatRoleRequirements(requirements)} 阵容要求` };
+    }
+
+    return { plan };
+  }
+
   function assignTeamHeroesLegacy(team, heroGroups, teamSize, binds, usedHeroes, normalizePreferredRoles) {
     const used = usedHeroes || new Set();
     const normalizeRoles = normalizePreferredRoles || normalizeRolesFallback;
-    const boundMap = new Map((binds || []).map((bind) => [bind.playerName, bind.heroDisplayName]));
+    const boundHeroMap = new Map((binds || []).map((bind) => [bind.playerName, parseLegacyHeroString(bind.heroDisplayName)]));
     const cloned = team.map((player) => ({ ...player, hero: null, preferredRole: normalizeRoles(player.preferredRoles || player.preferredRole) }));
     const needs = getTeamRoleRequirements(teamSize);
+    const rolePlanResult = buildRoleAssignmentPlanLegacy(cloned, needs, boundHeroMap);
 
-    // Pre-assign bound heroes
-    cloned.forEach((player) => {
-      const heroName = boundMap.get(player.name);
-      if (heroName && !used.has(heroName)) {
-        const heroInfo = parseLegacyHeroString(heroName);
-        if (heroInfo) {
-          player.hero = { name: heroInfo.name, roleCode: heroInfo.role, displayName: heroInfo.raw };
-          used.add(heroName);
-        }
-      }
-    });
-
-    // Re-query role counts (never use a stale snapshot)
-    function currentRoles() {
-      return {
-        T: cloned.filter((p) => p.hero?.roleCode === "T").length,
-        C: cloned.filter((p) => p.hero?.roleCode === "C").length,
-        N: cloned.filter((p) => p.hero?.roleCode === "N").length,
-      };
+    if (!rolePlanResult.plan) {
+      return { error: rolePlanResult.error };
     }
 
-    function tryAssign(player, role) {
-      const cur = currentRoles();
-      if (cur[role] >= needs[role]) return false;
-      const available = heroGroups[role].filter((hero) => !used.has(hero.raw));
-      if (!available.length) return false;
+    for (const player of cloned) {
+      const boundHero = boundHeroMap.get(player.name);
+      if (!boundHero) {
+        continue;
+      }
+
+      if (used.has(boundHero.raw)) {
+        return { error: `玩家「${player.name}」的专属英雄与当前分配冲突，请允许重复英雄或调整专属英雄后重试` };
+      }
+
+      player.hero = { name: boundHero.name, roleCode: boundHero.role, displayName: boundHero.raw };
+      used.add(boundHero.raw);
+    }
+
+    for (const player of shuffle(cloned.filter((item) => !item.hero))) {
+      const plannedRole = rolePlanResult.plan.get(player.name);
+      const available = heroGroups[plannedRole].filter((hero) => !used.has(hero.raw));
+      if (!available.length) {
+        return { error: `${roleLabel(plannedRole)}英雄不足，无法按玩家位置偏好完成分配` };
+      }
+
       const hero = available[Math.floor(Math.random() * available.length)];
       player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
       used.add(hero.raw);
-      return true;
     }
 
-    const unassigned = () => cloned.filter((player) => !player.hero);
-
-    // Pass 1: Single-preference players (try preferred role first, fall through to Pass 3 if full)
-    ["T", "N", "C"].forEach((role) => {
-      unassigned()
-        .filter((player) => player.preferredRole.length === 1 && player.preferredRole[0] === role)
-        .forEach((player) => {
-          tryAssign(player, role);
-        });
-    });
-
-    // Pass 2: Multi-preference players (try preferred roles that still need filling)
-    shuffle(unassigned().filter((player) => player.preferredRole.length > 1)).forEach((player) => {
-      const roles = player.preferredRole.filter((role) => currentRoles()[role] < needs[role]);
-      if (roles.length) {
-        tryAssign(player, roles[Math.floor(Math.random() * roles.length)]);
-      }
-      // If no preferred roles need filling, player stays unassigned for Pass 3
-    });
-
-    // Pass 3: Fill remaining players into any role that still needs filling
-    // Force-assign to unfilled roles regardless of player preference
-    shuffle(unassigned()).forEach((player) => {
-      const cur = currentRoles();
-      const unfilled = ["T", "N", "C"].filter((role) => cur[role] < needs[role]);
-      if (!unfilled.length) {
-        // All role requirements met, assign from any remaining hero
-        const pool = heroGroups.ALL.filter((hero) => !used.has(hero.raw));
-        if (pool.length) {
-          const hero = pool[Math.floor(Math.random() * pool.length)];
-          player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
-          used.add(hero.raw);
-        }
-        return;
-      }
-      // Try unfilled roles, preferring player's own preferences first
-      const ordered = unfilled.filter((role) => player.preferredRole.includes(role))
-        .concat(unfilled.filter((role) => !player.preferredRole.includes(role)));
-      for (const role of ordered) {
-        const available = heroGroups[role].filter((hero) => !used.has(hero.raw));
-        if (available.length) {
-          const hero = available[Math.floor(Math.random() * available.length)];
-          player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
-          used.add(hero.raw);
-          return;
-        }
-      }
-      // Last resort: any hero
-      const pool = heroGroups.ALL.filter((hero) => !used.has(hero.raw));
-      if (pool.length) {
-        const hero = pool[Math.floor(Math.random() * pool.length)];
-        player.hero = { name: hero.name, roleCode: hero.role, displayName: hero.raw };
-        used.add(hero.raw);
-      }
-    });
-
-    return cloned.map((player) => ({ ...player, preferredRoles: normalizeRoles(player.preferredRole) }));
+    return { team: cloned.map((player) => ({ ...player, preferredRoles: normalizeRoles(player.preferredRole) })) };
   }
 
   function assignFixedTeamLegacy(team, heroPool, needT, needC, needN, allowCrossRepeat, globalUsed) {
@@ -277,19 +289,19 @@
       return { error: `人数错误，5v5 需要 10 人，6v6 需要 12 人，当前为 ${sourcePlayers.length} 人` };
     }
 
-    const balancedTeams = balanceTeamsByLevelLegacy(sourcePlayers, options.rivals || []);
     const teamSize = sourcePlayers.length === 10 ? 5 : 6;
-    const levelGap = Math.abs(
-      balancedTeams.teamA.reduce((sum, player) => sum + (Number(player.level) || 0), 0) -
-      balancedTeams.teamB.reduce((sum, player) => sum + (Number(player.level) || 0), 0)
+    const initialTeams = balanceTeamsByLevelLegacy(sourcePlayers, options.rivals || []);
+    const initialLevelGap = Math.abs(
+      initialTeams.teamA.reduce((sum, player) => sum + (Number(player.level) || 0), 0) -
+      initialTeams.teamB.reduce((sum, player) => sum + (Number(player.level) || 0), 0)
     );
 
     if (!autoAssignHeroes) {
       return {
         payload: {
           selectedMap: randomMapPayload(options.maps || []),
-          teams: { teamA: balancedTeams.teamA, teamB: balancedTeams.teamB },
-          summary: { autoAssignHeroes: false, allowRepeatHeroes, levelGap, totalPlayers: sourcePlayers.length, teamSize },
+          teams: { teamA: initialTeams.teamA, teamB: initialTeams.teamB },
+          summary: { autoAssignHeroes: false, allowRepeatHeroes, levelGap: initialLevelGap, totalPlayers: sourcePlayers.length, teamSize },
         },
       };
     }
@@ -312,19 +324,39 @@
 
     let finalA = null;
     let finalB = null;
+    let finalTeams = initialTeams;
     let valid = false;
+    let lastError = "";
     for (let retry = 0; retry < 50; retry += 1) {
+      finalTeams = balanceTeamsByLevelLegacy(sourcePlayers, options.rivals || []);
       const sharedUsed = new Set();
-      finalA = assignTeamHeroesLegacy(balancedTeams.teamA, heroGroups, teamSize, options.binds || [], allowRepeatHeroes ? new Set() : sharedUsed, normalizePreferredRoles);
-      finalB = assignTeamHeroesLegacy(balancedTeams.teamB, heroGroups, teamSize, options.binds || [], allowRepeatHeroes ? new Set() : sharedUsed, normalizePreferredRoles);
-      if (!finalA || !finalB) continue;
+      const resultA = assignTeamHeroesLegacy(finalTeams.teamA, heroGroups, teamSize, options.binds || [], allowRepeatHeroes ? new Set() : sharedUsed, normalizePreferredRoles);
+      if (!resultA.team) {
+        lastError = resultA.error || lastError;
+        continue;
+      }
+
+      const resultB = assignTeamHeroesLegacy(finalTeams.teamB, heroGroups, teamSize, options.binds || [], allowRepeatHeroes ? new Set() : sharedUsed, normalizePreferredRoles);
+      if (!resultB.team) {
+        lastError = resultB.error || lastError;
+        continue;
+      }
+
+      finalA = resultA.team;
+      finalB = resultB.team;
       valid = isValidAllocationLegacy(finalA, finalB, teamSize);
       if (valid) break;
+      lastError = "英雄分配未能满足角色配置要求，请检查玩家位置偏好和英雄池后重试";
     }
 
     if (!finalA || !finalB || !valid) {
-      return { error: "英雄分配未能满足角色配置要求，请扩大英雄池或允许两队重复英雄后重试" };
+      return { error: lastError || "英雄分配未能满足角色配置要求，请扩大英雄池或允许两队重复英雄后重试" };
     }
+
+    const levelGap = Math.abs(
+      finalTeams.teamA.reduce((sum, player) => sum + (Number(player.level) || 0), 0) -
+      finalTeams.teamB.reduce((sum, player) => sum + (Number(player.level) || 0), 0)
+    );
 
     return {
       payload: {

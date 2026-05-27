@@ -139,6 +139,14 @@ function roleRequirements(teamSize) {
   return null;
 }
 
+function roleLabel(role) {
+  return { T: "坦克", C: "输出", N: "辅助" }[role] || role;
+}
+
+function formatRoleRequirements(requirements) {
+  return `${requirements.T}${roleLabel("T")}/${requirements.C}${roleLabel("C")}/${requirements.N}${roleLabel("N")}`;
+}
+
 function availableHeroesByRole(heroes, usedSet) {
   return {
     T: heroes.filter((hero) => hero.roleCode === "T" && !usedSet.has(hero.key)),
@@ -159,6 +167,73 @@ function assignFromPool(player, list, usedSet) {
   return hero;
 }
 
+function buildRoleAssignmentPlan(team, requirements, bindMap) {
+  const remaining = { ...requirements };
+  const plan = new Map();
+  const unboundPlayers = [];
+
+  for (const player of team) {
+    const boundHero = bindMap.get(Number(player.id));
+    if (!boundHero) {
+      unboundPlayers.push(player);
+      continue;
+    }
+
+    if (!player.preferredRoles.includes(boundHero.roleCode)) {
+      return {
+        error: `玩家「${player.name}」的专属英雄职责与位置偏好冲突，请调整偏好或专属英雄后重试`,
+      };
+    }
+
+    remaining[boundHero.roleCode] -= 1;
+    if (remaining[boundHero.roleCode] < 0) {
+      return {
+        error: `当前队伍的玩家位置偏好和专属英雄无法满足 ${formatRoleRequirements(requirements)} 阵容要求`,
+      };
+    }
+
+    plan.set(Number(player.id), boundHero.roleCode);
+  }
+
+  function backtrack(players) {
+    if (!players.length) {
+      return Object.values(remaining).every((count) => count === 0);
+    }
+
+    const orderedPlayers = shuffle(players).sort((left, right) => {
+      const leftOptions = left.preferredRoles.filter((role) => remaining[role] > 0).length;
+      const rightOptions = right.preferredRoles.filter((role) => remaining[role] > 0).length;
+      return leftOptions - rightOptions;
+    });
+    const [player, ...rest] = orderedPlayers;
+    const roleOptions = shuffle(player.preferredRoles.filter((role) => remaining[role] > 0));
+
+    if (!roleOptions.length) {
+      return false;
+    }
+
+    for (const role of roleOptions) {
+      remaining[role] -= 1;
+      plan.set(Number(player.id), role);
+      if (backtrack(rest)) {
+        return true;
+      }
+      plan.delete(Number(player.id));
+      remaining[role] += 1;
+    }
+
+    return false;
+  }
+
+  if (!backtrack(unboundPlayers)) {
+    return {
+      error: `当前队伍的玩家位置偏好无法满足 ${formatRoleRequirements(requirements)} 阵容要求`,
+    };
+  }
+
+  return { plan };
+}
+
 function assignTeamHeroes(team, heroes, options) {
   const requirements = roleRequirements(team.length);
   const usedSet = options.usedSet;
@@ -174,65 +249,48 @@ function assignTeamHeroes(team, heroes, options) {
       const pool = availableHeroesByRole(heroes, usedSet).ALL;
       assignFromPool(player, pool, usedSet);
     });
-    return;
+    return { ok: true };
+  }
+
+  const rolePlanResult = buildRoleAssignmentPlan(team, requirements, bindMap);
+  if (!rolePlanResult.plan) {
+    return { ok: false, error: rolePlanResult.error };
   }
 
   team.forEach((player) => {
     const boundHero = bindMap.get(Number(player.id));
-    if (boundHero && !usedSet.has(boundHero.key)) {
+    if (!boundHero) {
+      return;
+    }
+
+    if (usedSet.has(boundHero.key)) {
+      throw new Error(`玩家「${player.name}」的专属英雄与当前分配冲突，请允许重复英雄或调整专属英雄后重试`);
+    }
+
+    if (rolePlanResult.plan.get(Number(player.id)) === boundHero.roleCode) {
       player.hero = boundHero;
       usedSet.add(boundHero.key);
     }
   });
 
-  const assignedByRole = () => ({
-    T: team.filter((player) => player.hero?.roleCode === "T").length,
-    C: team.filter((player) => player.hero?.roleCode === "C").length,
-    N: team.filter((player) => player.hero?.roleCode === "N").length,
-  });
-
-  const assignRoleToCandidates = (role, candidates) => {
-    const needed = requirements[role];
-    const queue = shuffle(candidates.filter((player) => !player.hero));
-
-    while (assignedByRole()[role] < needed && queue.length) {
-      const player = queue.shift();
-      const pool = availableHeroesByRole(heroes, usedSet)[role];
-      const assigned = assignFromPool(player, pool, usedSet);
-      if (!assigned) {
-        break;
-      }
-    }
-  };
-
-  ["T", "N", "C"].forEach((role) => {
-    assignRoleToCandidates(role, team.filter((player) => player.preferredRoles.length === 1 && player.preferredRoles[0] === role));
-  });
-
-  ["T", "N", "C"].forEach((role) => {
-    assignRoleToCandidates(role, team.filter((player) => player.preferredRoles.length > 1 && player.preferredRoles.includes(role)));
-  });
-
   const remainingPlayers = shuffle(team.filter((player) => !player.hero));
-
-  remainingPlayers.forEach((player) => {
-    const current = assignedByRole();
-    const unfilled = ["T", "N", "C"].filter((role) => current[role] < requirements[role]);
-
-    if (unfilled.length) {
-      // Try unfilled roles, preferring player's own preferences first
-      const ordered = unfilled.filter((role) => player.preferredRoles.includes(role))
-        .concat(unfilled.filter((role) => !player.preferredRoles.includes(role)));
-      for (const role of ordered) {
-        const pool = availableHeroesByRole(heroes, usedSet)[role];
-        const assigned = assignFromPool(player, pool, usedSet);
-        if (assigned) return;
-      }
+  for (const player of remainingPlayers) {
+    const plannedRole = rolePlanResult.plan.get(Number(player.id));
+    if (!plannedRole) {
+      return { ok: false, error: `玩家「${player.name}」缺少可用的位置分配方案` };
     }
 
-    // All role requirements met or no role pool available: assign from any hero
-    assignFromPool(player, availableHeroesByRole(heroes, usedSet).ALL, usedSet);
-  });
+    const pool = availableHeroesByRole(heroes, usedSet)[plannedRole];
+    const assigned = assignFromPool(player, pool, usedSet);
+    if (!assigned) {
+      return {
+        ok: false,
+        error: `${roleLabel(plannedRole)}英雄不足，无法按玩家位置偏好完成分配`,
+      };
+    }
+  }
+
+  return { ok: true };
 }
 
 function serializePlayer(player) {
@@ -325,7 +383,12 @@ function drawMatch(input) {
     }
 
     let valid = false;
+    let lastError = "";
     for (let retry = 0; retry < 50; retry += 1) {
+      if (mode !== "fixed-team") {
+        teams = autoBalanceTeams(players, useRivals ? rivals : []);
+      }
+
       const sharedUsedSet = new Set();
       const teamAUsed = allowRepeatHeroes ? new Set() : sharedUsedSet;
       const teamBUsed = allowRepeatHeroes ? new Set() : sharedUsedSet;
@@ -334,17 +397,28 @@ function drawMatch(input) {
       teams.teamA.forEach((p) => { p.hero = null; });
       teams.teamB.forEach((p) => { p.hero = null; });
 
-      assignTeamHeroes(teams.teamA, heroRows, { usedSet: teamAUsed, bindMap });
-      assignTeamHeroes(teams.teamB, heroRows, { usedSet: teamBUsed, bindMap });
+      const teamAResult = assignTeamHeroes(teams.teamA, heroRows, { usedSet: teamAUsed, bindMap });
+      if (!teamAResult.ok) {
+        lastError = teamAResult.error || lastError;
+        continue;
+      }
+
+      const teamBResult = assignTeamHeroes(teams.teamB, heroRows, { usedSet: teamBUsed, bindMap });
+      if (!teamBResult.ok) {
+        lastError = teamBResult.error || lastError;
+        continue;
+      }
 
       if (validateHeroAllocation(teams.teamA, teams.teamB, teamSize)) {
         valid = true;
         break;
       }
+
+      lastError = "英雄分配未能满足角色配置要求，请检查玩家位置偏好和英雄池后重试";
     }
 
     if (!valid) {
-      throw new Error("英雄分配未能满足角色配置要求，请扩大英雄池或允许两队重复英雄后重试");
+      throw new Error(lastError || "英雄分配未能满足角色配置要求，请扩大英雄池或允许两队重复英雄后重试");
     }
   }
 
